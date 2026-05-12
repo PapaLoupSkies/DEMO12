@@ -139,14 +139,12 @@ const KB_DATE_MAX  = "{{ date_max }}";
   <span class="acf-clear-all" onclick="clearAllColFilters()">Clear all</span>
 </div>
 
-<div class="table-wrap" style="overflow-x:auto;max-width:100%;">
+<div class="table-wrap" id="table-wrap">
   <div class="loading" id="loading">Loading data...</div>
-  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
   <table id="main-table" style="display:none;min-width:max-content;width:max-content;">
     <thead><tr class="header-row" id="thead-row"></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
-  </div>
   <div class="no-results" id="no-results" style="display:none">No results found.</div>
 </div>
 
@@ -289,7 +287,7 @@ async function loadData() {
   buildChips();
   document.getElementById('loading').style.display='none';
   document.getElementById('main-table').style.display='';
-  buildHeader(); render();
+  buildHeader(); render(); setTableHeight();
 }
 
 // (Sets déjà déclarés en haut)
@@ -532,6 +530,7 @@ function goPage(p) {
 let _lastFiltered = [];
 
 function render(){
+  setTimeout(setTableHeight, 50);
   let data=getFiltered();
   data.sort((a,b)=>{let va=String(a[sortCol]??'').toLowerCase(),vb=String(b[sortCol]??'').toLowerCase();return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;});
   _lastFiltered = data;
@@ -627,9 +626,12 @@ function renderPage(data) {
 
     tbody.appendChild(tr);
 
-    // Expanded detail row — customized columns
+    // Expanded detail row — all columns NOT in VISIBLE_COLS
     if(isExp){
-      const customCols = CUSTOMIZED_COLS[row['List Name']] || [];
+      const visSet = new Set(VISIBLE_COLS);
+      const customCols = Object.keys(row).filter(k =>
+        !visSet.has(k) && k !== 'List Name' && row[k] !== '' && row[k] !== 'nan' && row[k] !== null && row[k] !== undefined
+      );
       const dtr = document.createElement('tr'); dtr.className = 'detail-row';
       const dtd = document.createElement('td'); dtd.colSpan = VISIBLE_COLS.length + 3;
       if (!customCols.length) {
@@ -685,7 +687,19 @@ document.getElementById('sort-col').addEventListener('change',e=>{sortCol=e.targ
 document.getElementById('sort-dir').addEventListener('change',e=>{sortDir=e.target.value;buildHeader();render();});
 document.getElementById('reuse-modal').addEventListener('click',closeReuseModal);
 initPlatformPanel();
-loadData();
+loadData().then(setTableHeight);
+
+// ── Auto-fit table height to viewport ──
+function setTableHeight() {
+  const wrap = document.getElementById('table-wrap');
+  if (!wrap) return;
+  const top = wrap.getBoundingClientRect().top + window.scrollY;
+  const pgBar = document.getElementById('pagination-bar');
+  const pgH = pgBar && pgBar.style.display !== 'none' ? pgBar.offsetHeight + 1 : 0;
+  wrap.style.height = (window.innerHeight - top - pgH - 8) + 'px';
+}
+window.addEventListener('resize', setTableHeight);
+
 
 // ── View toggle ──
 function switchView(v) {

@@ -37,10 +37,16 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # ── HELPERS ───────────────────────────────────────────────────
 def csv_read(path):
-    try:
-        return pd.read_csv(path, encoding="utf-8-sig").fillna("")
-    except:
-        return pd.DataFrame()
+    """Read CSV with encoding fallback and clean column names."""
+    for enc in ["utf-8-sig", "utf-8", "latin-1", "cp1252"]:
+        try:
+            df = pd.read_csv(path, encoding=enc).fillna("")
+            # Strip whitespace and non-breaking spaces from column names
+            df.columns = [c.strip().replace('\xa0',' ').replace('\t',' ') for c in df.columns]
+            return df
+        except Exception:
+            continue
+    return pd.DataFrame()
 
 def csv_write(path, df):
     df.to_csv(path, index=False, encoding="utf-8-sig")
