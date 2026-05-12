@@ -101,10 +101,10 @@
   <span class="acf-clear-all" onclick="clearAllColFilters()">Clear all</span>
 </div>
 
-<div class="table-wrap">
+<div class="table-wrap" style="overflow-x:auto;max-width:100%;">
   <div class="loading" id="loading">Loading data...</div>
-  <div style="overflow-x:auto">
-  <table id="main-table" style="display:none">
+  <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+  <table id="main-table" style="display:none;min-width:max-content;width:max-content;">
     <thead><tr class="header-row" id="thead-row"></tr></thead>
     <tbody id="tbody"></tbody>
   </table>

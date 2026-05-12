@@ -188,6 +188,14 @@
       <input type="text" id="kb-search" placeholder="Rechercher..." oninput="renderBoard()">
     </div>
 
+    <!-- Sort -->
+    <select class="kb-select" id="kb-sort" onchange="renderBoard()" style="flex:0 0 auto;">
+      <option value="date-asc">Date ↑</option>
+      <option value="date-desc">Date ↓</option>
+      <option value="name-asc">Nom A→Z</option>
+      <option value="name-desc">Nom Z→A</option>
+    </select>
+
     <div class="slider-zone">
       <span class="slider-zone-label">Date pub.</span>
       <div class="date-pickers">
@@ -501,7 +509,16 @@ function renderBoard(){
   const byTeam={};
   [...sel].forEach(t=>{byTeam[t]=[];});
   filtered.forEach(r=>{ if(byTeam[r["Owner Team"]]!==undefined) byTeam[r["Owner Team"]].push(r); });
-  Object.values(byTeam).forEach(arr=>arr.sort((a,b)=>toTs(a["Published Date"])-toTs(b["Published Date"])));
+  const sortVal = document.getElementById('kb-sort') ? document.getElementById('kb-sort').value : 'date-asc';
+  Object.values(byTeam).forEach(arr=>arr.sort((a,b)=>{
+    if(sortVal==='date-asc')  return toTs(a["Published Date"])-toTs(b["Published Date"]);
+    if(sortVal==='date-desc') return toTs(b["Published Date"])-toTs(a["Published Date"]);
+    const na=(a["Content Name (EN)"]||a["Content Name (FR)"]||"").toLowerCase();
+    const nb=(b["Content Name (EN)"]||b["Content Name (FR)"]||"").toLowerCase();
+    if(sortVal==='name-asc')  return na<nb?-1:na>nb?1:0;
+    if(sortVal==='name-desc') return na>nb?-1:na<nb?1:0;
+    return 0;
+  }));
 
   if(filtered.length===0){noRes.style.display="block"; return;}
   noRes.style.display="none";
