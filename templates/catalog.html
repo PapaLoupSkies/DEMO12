@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+{% block title %}Content Hub{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* View toggle */
+  .view-toggle-bar {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 8px 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .view-toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+  .vbtn { display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text-muted); font-family: 'Inter',sans-serif; transition: all .15s; white-space: nowrap; }
+  .vbtn.active { background: var(--white); color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 0.5px solid var(--border); }
+  .vbtn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .view-sep { width: 1px; height: 22px; background: var(--border); }
+
+  /* Section visibility */
+  #section-list { display: block; }
+  #section-card { display: none; }
+
+
+  /* Pagination */
+  .pagination-bar { display:flex; align-items:center; justify-content:center;
+    gap:16px; padding:10px 24px; border-top:1px solid var(--border); background:var(--white);
+    position:sticky; bottom:0; z-index:5; }
+  .pagination-info { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+  .pagination-info strong { color:var(--text); }
+  .pagination-btns { display:flex; gap:4px; }
+  .pg-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px;
+    background:var(--bg); font-size:12px; font-family:'Inter',sans-serif;
+    color:var(--text-muted); cursor:pointer; transition:all .15s; }
+  .pg-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+  .pg-btn:disabled { opacity:.4; cursor:default; }
+  .pg-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+  .pg-pages { display:flex; gap:3px; }
+  /* Cell expand */
+  .cell-wrap { position: relative; }
+  .cell-short { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .cell-full { display: none; white-space: pre-wrap; word-break: break-word; }
+  .cell-wrap.expanded .cell-short { display: none; }
+  .cell-wrap.expanded .cell-full { display: block; }
+  .cell-actions { display: flex; gap: 4px; margin-top: 4px; }
+  .cell-toggle { font-size: 10px; color: var(--accent); cursor: pointer; background: none; border: none; padding: 0; font-family: 'Inter', sans-serif; }
+  .cell-copy { font-size: 10px; color: var(--text-muted); cursor: pointer; background: none; border: none; padding: 0; font-family: 'Inter', sans-serif; }
+  .cell-copy:hover { color: var(--accent); }
+  .cell-copy.copied { color: var(--approved); }
+  .detail-row td{padding:0;background:#f2f8f6;border-bottom:2px solid var(--accent);}
+  .detail-panel{padding:16px 22px 20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;}
+  .detail-section{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px 14px;}
+  .detail-section h4{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border-light);}
+  .detail-section pre{font-family:'Inter',sans-serif;font-size:12px;color:#444;white-space:pre-wrap;word-break:break-word;line-height:1.6;}
+  /* Dropdown filters */
+  .dd-filter-btn{padding:5px 12px;border-radius:7px;font-size:12px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text-muted);transition:all .15s;white-space:nowrap;}
+  .dd-filter-btn:hover,.dd-filter-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+  .dd-filter-btn .cnt{display:inline-block;margin-left:4px;padding:1px 5px;border-radius:10px;font-size:10px;background:var(--accent);color:#fff;font-weight:600;vertical-align:middle;}
+  .dd-filter-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:400;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:200px;max-width:260px;overflow:hidden;}
+  .dd-filter-panel.open{display:block;}
+  .dd-clear-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid #e0a0a0;background:none;color:var(--red);white-space:nowrap;}
+  .dd-clear-btn:hover{background:#fdecea;}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Variables pour la Card View ── #}
+<script>
+const KB_ROWS      = {{ rows_json|safe }};
+const KB_TEAMS     = {{ teams_json|safe }};
+const KB_CATS      = {{ categories_json|safe }};
+const KB_PLATS     = {{ platforms_json|safe }};
+const KB_DATE_MIN  = "{{ date_min }}";
+const KB_DATE_MAX  = "{{ date_max }}";
+</script>
+
+{# ── Toggle bar ── #}
+<div class="view-toggle-bar">
+  <div class="view-toggle">
+    <button class="vbtn active" id="vbtn-list" onclick="switchView('list')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      Library View
+    </button>
+    <button class="vbtn" id="vbtn-card" onclick="switchView('card')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/></svg>
+      Card View
+    </button>
+  </div>
+</div>
+
+{# ── SECTION LIST VIEW (existante) ── #}
+<div id="section-list">
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Search all content...">
+  </div>
+  <div id="dd-category-wrap" style="position:relative;display:inline-block">
+    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thématique ▾</button>
+    <div class="dd-filter-panel" id="dd-category-panel"></div>
+  </div>
+  <select id="sel-platform-cat" onchange="applyPlatformFilter()" style="padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:var(--bg);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
+    <option value="">All Platforms</option>
+  </select>
+
+  <button class="dd-clear-btn" id="dd-clear-all" onclick="clearTopFilters()" style="display:none">✕ Clear</button>
+  <select id="sort-col">
+    <option value="ID">Sort by ID</option>
+    <option value="Content Name (EN)">Sort by Name</option>
+    <option value="Primary Thematic">Sort by Thematic</option>
+    <option value="Owner Team">Sort by Owner Team</option>
+    <option value="List Name">Sort by List</option>
+  </select>
+  <select id="sort-dir">
+    <option value="asc">Ascending</option>
+    <option value="desc">Descending</option>
+  </select>
+  <div class="count-badge"><span id="result-count">—</span> résultat(s)</div>
+</div>
+
+<div class="active-col-filters" id="active-col-filters">
+  <span class="acf-label">Column filters:</span>
+  <span id="acf-chips"></span>
+  <span class="acf-clear-all" onclick="clearAllColFilters()">Clear all</span>
+</div>
+
+<div class="table-wrap">
+  <div class="loading" id="loading">Loading data...</div>
+  <div style="overflow-x:auto">
+  <table id="main-table" style="display:none">
+    <thead><tr class="header-row" id="thead-row"></tr></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  </div>
+  <div class="no-results" id="no-results" style="display:none">No results found.</div>
+</div>
+
+
+<div class="pagination-bar" id="pagination-bar" style="display:none">
+  <div class="pagination-info" id="pg-info"></div>
+  <div class="pagination-btns">
+    <button class="pg-btn" id="pg-prev" onclick="goPage(currentPage-1)">← Préc.</button>
+    <div class="pg-pages" id="pg-pages"></div>
+    <button class="pg-btn" id="pg-next" onclick="goPage(currentPage+1)">Suiv. →</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="reuse-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>♻️ Request to Reuse</h3>
+    <p id="reuse-modal-desc"></p>
+    <textarea id="reuse-message" placeholder="Optional message to the owner team..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeReuseModal()">Cancel</button>
+      <button class="btn-primary" onclick="submitReuse()">Send Request</button>
+    </div>
+  </div>
+</div>
+</div>{# fin #section-list #}
+
+{# ── SECTION CARD VIEW ── #}
+<div id="section-card">
+  {% include "kanban_partial.html" %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PLATFORM_VALUES = {{ platforms_json | safe }};
+let ALL_DATA=[], CUSTOMIZED_COLS={}, COMMON_COLS=[];
+let sortCol='Primary Thematic', sortDir='asc';
+let expandedRows=new Set();
+let activeCategory='', activeList='';
+let colFilters={};
+let reuseTarget=null;
+
+// ── Pagination ──
+const PAGE_SIZE = 25;
+let currentPage = 1;
+
+
+
+// ── Debounce ──
+function debounce(fn, delay) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+const VISIBLE_COLS = [
+  'Primary Thematic','Platform','Content Family','Content Types',
+  'Content Name (EN)','Content Name (FR)','Content Description',
+  'Content Published Link','Owner Team','Author Team','Contact Team'
+];
+
+// Sets de sélection — déclarés AVANT loadData
+let selectedCategories = new Set();
+let selectedLists = new Set();
+let selectedPlatforms = new Set();
+
+// Peupler le panel Platform immédiatement (données disponibles dès le chargement)
+function initPlatformPanel() {
+  // Peupler le select Platform
+  const sel = document.getElementById('sel-platform-cat');
+  PLATFORM_VALUES.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    sel.appendChild(opt);
+  });
+}
+
+function applyPlatformFilter() {
+  expandedRows.clear();
+  render();
+}
+
+function updatePlatformOptions() {
+  // Recalculer les plateformes disponibles selon les filtres actifs (hors Platform)
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const relevant = ALL_DATA.filter(r => {
+    if(selectedCategories.size > 0){
+      const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
+      if(!cats.some(c=>selectedCategories.has(c))) return false;
+    }
+    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const availPlats = new Set();
+  relevant.forEach(r => (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) availPlats.add(p); }));
+  
+  const sel = document.getElementById('sel-platform-cat');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Platforms</option>';
+  [...availPlats].sort().forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p; opt.textContent = p;
+    if(p === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  // Si la valeur courante n'est plus disponible, reset
+  if(current && !availPlats.has(current)){
+    sel.value = '';
+    expandedRows.clear();
+    render();
+  }
+}
+
+async function loadData() {
+  const res = await fetch('/api/catalog');
+  const json = await res.json();
+  ALL_DATA=json.rows; CUSTOMIZED_COLS=json.custom_cols||{}; COMMON_COLS=json.common_cols||[];
+  buildChips();
+  document.getElementById('loading').style.display='none';
+  document.getElementById('main-table').style.display='';
+  buildHeader(); render();
+}
+
+// (Sets déjà déclarés en haut)
+
+function buildChips() {
+  // Collecter les catégories uniques (split multi-valeurs)
+  const allCats = new Set();
+  ALL_DATA.forEach(r => (r['Primary Thematic']||'').split(';').map(s=>s.trim()).filter(Boolean).forEach(c=>allCats.add(c)));
+  buildDdPanel('category', [...allCats].sort(), selectedCategories);
+  // Plateformes
+
+}
+
+function buildDdPanel(type, values, selected) {
+  const panel = document.getElementById('dd-'+type+'-panel');
+  if (!panel) return; // panel inexistant, skip
+  const search = document.createElement('input');
+  search.placeholder = 'Search...';
+  search.style.cssText = 'width:100%;padding:7px 10px;border:none;border-bottom:1px solid var(--border);font-family:Inter,sans-serif;font-size:12px;background:var(--bg);color:var(--text);outline:none';
+  search.oninput = () => {
+    const q = search.value.toLowerCase();
+    panel.querySelectorAll('.dd-item').forEach(el => {
+      el.style.display = el.dataset.val.toLowerCase().includes(q) ? '' : 'none';
+    });
+  };
+
+  const selectAll = document.createElement('div');
+  selectAll.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border-light);font-size:11px;color:var(--text-muted);cursor:pointer;font-style:italic';
+  selectAll.innerHTML = '<input type="checkbox" style="accent-color:var(--accent);width:13px;height:13px"> Select all';
+  selectAll.querySelector('input').addEventListener('change', e => {
+    panel.querySelectorAll('.dd-item input').forEach(cb => { cb.checked = e.target.checked; });
+    applyDdFilter(type, selected);
+  });
+
+  const list = document.createElement('div');
+  list.style.cssText = 'max-height:220px;overflow-y:auto';
+  values.forEach(val => {
+    const item = document.createElement('div');
+    item.className = 'dd-item'; item.dataset.val = val;
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:12px;color:var(--text);cursor:pointer';
+    item.innerHTML = `<input type="checkbox" value="${esc(val)}" style="accent-color:var(--accent);width:13px;height:13px" ${selected.has(val)?'checked':''}> ${esc(val)}`;
+    item.querySelector('input').addEventListener('change', () => applyDdFilter(type, selected));
+    list.appendChild(item);
+  });
+
+  const footer = document.createElement('div');
+  footer.style.cssText = 'padding:6px 10px;border-top:1px solid var(--border);display:flex;gap:6px;justify-content:flex-end';
+  const clearBtn = document.createElement('button');
+  clearBtn.textContent = 'Clear';
+  clearBtn.style.cssText = 'padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:none;color:var(--text-muted);font-family:Inter,sans-serif;font-size:11px;cursor:pointer';
+  clearBtn.onclick = () => clearDd(type);
+  footer.appendChild(clearBtn);
+
+  panel.innerHTML = '';
+  panel.appendChild(search);
+  panel.appendChild(selectAll);
+  panel.appendChild(list);
+  panel.appendChild(footer);
+}
+
+function applyDdFilter(type, selected) {
+  const panel = document.getElementById('dd-'+type+'-panel');
+  const checked = [...panel.querySelectorAll('.dd-item input:checked')].map(cb=>cb.value);
+  selected.clear();
+  checked.forEach(v => selected.add(v));
+  updateDdBtn(type, selected);
+  document.getElementById('dd-clear-all').style.display = selectedCategories.size ? '' : 'none';
+  updatePlatformOptions();
+  expandedRows.clear(); render();
+}
+
+function clearDd(type) {
+  const sel = type==='category' ? selectedCategories : (type==='platform' ? selectedPlatforms : selectedLists);
+  sel.clear();
+  const panel = document.getElementById('dd-'+type+'-panel');
+  panel.querySelectorAll('.dd-item input').forEach(cb => cb.checked = false);
+  updateDdBtn(type, sel);
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedPlatforms.size) ? '' : 'none';
+  expandedRows.clear(); render();
+}
+
+function clearTopFilters() {
+  selectedCategories.clear();
+  // Reset Category dropdown
+  const catPanel = document.getElementById('dd-category-panel');
+  if(catPanel) catPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateDdBtn('category', new Set());
+  // Reset Platform select
+  document.getElementById('sel-platform-cat').value = '';
+  updatePlatformOptions();
+  document.getElementById('dd-clear-all').style.display = 'none';
+  expandedRows.clear(); render();
+}
+
+function updateDdBtn(type, selected) {
+  const btn = document.getElementById('dd-'+type+'-btn');
+  const labels = {'category':'Category','list':'List','platform':'Platform'};
+  const label = labels[type] || type;
+  if (selected.size > 0) {
+    btn.classList.add('active');
+    btn.innerHTML = label + ' <span class="cnt">' + selected.size + '</span> ▾';
+  } else {
+    btn.classList.remove('active');
+    btn.innerHTML = label + ' ▾';
+  }
+}
+
+function toggleDd(type) {
+  const panel = document.getElementById('dd-'+type+'-panel');
+  const isOpen = panel.classList.contains('open');
+  // Fermer tous les autres
+  document.querySelectorAll('.dd-filter-panel').forEach(p => p.classList.remove('open'));
+  document.querySelectorAll('.dd-filter-btn').forEach(b => b.style.boxShadow='');
+  if (!isOpen) { panel.classList.add('open'); }
+}
+
+// Fermer les dropdowns si clic ailleurs
+document.addEventListener('click', e => {
+  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-list-wrap')) {
+    document.querySelectorAll('.dd-filter-panel').forEach(p => p.classList.remove('open'));
+  }
+});
+
+function buildHeader() {
+  const tr=document.getElementById('thead-row'); tr.innerHTML='';
+  VISIBLE_COLS.forEach(col=>{
+    const th=document.createElement('th');
+    const hasF=colFilters[col]&&colFilters[col].length>0;
+    const sc=sortCol===col?(sortDir==='asc'?'asc':'desc'):'';
+    th.innerHTML=`<div class="th-inner" onclick="handleSort('${col}',event)">
+      <span class="th-label">${col}</span>
+      <div class="th-icons">
+        <span class="sort-icon ${sc}"></span>
+        <div class="filter-icon ${hasF?'has-filter':''}" onclick="openColFilter(event,'${col}',this)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+        </div>
+      </div>
+    </div>`;
+    tr.appendChild(th);
+  });
+  // Extra cols (Reuse + Specific cols buttons)
+  tr.innerHTML += `
+    <th style="background:var(--bg)"></th>
+    <th style="background:var(--bg)"></th>`;
+  if(!sortCol) sortCol = VISIBLE_COLS[0];
+}
+
+function openColFilter(e,col,iconEl){
+  e.stopPropagation();
+  if(_openDropdown){_openDropdown.remove();_openDropdown=null;}
+  const allVals=[...new Set(ALL_DATA.map(r=>r[col]||'').filter(Boolean))].sort();
+  const active=colFilters[col]||[];
+  const dd=buildColFilter(col,allVals,active,(checked)=>{
+    if(checked.length===0)delete colFilters[col];else colFilters[col]=checked;
+    dd.remove();_openDropdown=null;
+    updateActiveFiltersBar();buildHeader();render();
+  });
+  dd.style.cssText='position:absolute;z-index:300;margin-top:2px';
+  iconEl.style.position='relative';
+  iconEl.appendChild(dd);_openDropdown=dd;
+}
+
+function handleSort(col,e){
+  if(e.target.closest('.filter-icon'))return;
+  sortDir=sortCol===col?(sortDir==='asc'?'desc':'asc'):'asc';
+  sortCol=col;buildHeader();render();
+}
+
+function updateActiveFiltersBar(){
+  const bar=document.getElementById('active-col-filters');
+  const chips=document.getElementById('acf-chips');
+  const active=Object.entries(colFilters).filter(([,v])=>v.length);
+  if(!active.length){bar.classList.remove('visible');return;}
+  bar.classList.add('visible');
+  chips.innerHTML=active.map(([col,vals])=>`<span class="acf-chip">${col}: ${vals.slice(0,2).join(', ')}${vals.length>2?'…':''}<button onclick="clearColFilter('${col}')">×</button></span>`).join('');
+}
+function clearColFilter(col){delete colFilters[col];updateActiveFiltersBar();buildHeader();render();}
+function clearAllColFilters(){colFilters={};updateActiveFiltersBar();buildHeader();render();}
+
+function getFiltered(){
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const platVal = document.getElementById('sel-platform-cat').value;
+  return ALL_DATA.filter(r=>{
+    // Filtre Platform (select simple)
+    if(platVal){
+      const plats = (r['Platform']||'').split(';').map(s=>s.trim());
+      if(!plats.includes(platVal)) return false;
+    }
+    // Filtre Category (dropdown multi-select)
+    if(selectedCategories.size > 0){
+      const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
+      if(!cats.some(c=>selectedCategories.has(c))) return false;
+    }
+    // Recherche textuelle
+    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
+    // Filtres colonnes
+    for(const[col,vals]of Object.entries(colFilters))if(vals.length&&!vals.includes(r[col]||''))return false;
+    return true;
+  });
+}
+
+/* ── Cell with expand + copy ── */
+function makeCell(value, maxLines=3) {
+  const td = document.createElement('td');
+  if (!value || value === 'nan' || value === '') {
+    td.innerHTML = '<span style="color:var(--text-light);font-size:11px">—</span>';
+    return td;
+  }
+  const str = String(value);
+  const wrap = document.createElement('div');
+  wrap.className = 'cell-wrap';
+  wrap.innerHTML = `
+    <div class="cell-short" style="-webkit-line-clamp:${maxLines}">${esc(str)}</div>
+    <div class="cell-full">${esc(str)}</div>
+    <div class="cell-actions">
+      <button class="cell-toggle" onclick="toggleCell(this)">▼ See more</button>
+      <button class="cell-copy" onclick="copyCell(this,'${esc(str).replace(/'/g,"&#39;")}')">⎘ Copy</button>
+    </div>`;
+  td.appendChild(wrap);
+  return td;
+}
+
+function toggleCell(btn) {
+  const wrap = btn.closest('.cell-wrap');
+  wrap.classList.toggle('expanded');
+  btn.textContent = wrap.classList.contains('expanded') ? '▲ Less' : '▼ See more';
+}
+
+function copyCell(btn, text) {
+  navigator.clipboard.writeText(text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'"))
+    .then(()=>{ btn.textContent='✓ Copied'; btn.classList.add('copied'); setTimeout(()=>{btn.textContent='⎘ Copy';btn.classList.remove('copied');},1500); });
+}
+
+function goPage(p) {
+  const total = Math.ceil(_lastFiltered.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(p, total || 1));
+  renderPage(_lastFiltered);
+}
+
+let _lastFiltered = [];
+
+function render(){
+  let data=getFiltered();
+  data.sort((a,b)=>{let va=String(a[sortCol]??'').toLowerCase(),vb=String(b[sortCol]??'').toLowerCase();return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;});
+  _lastFiltered = data;
+  currentPage = 1;
+  renderPage(data);
+}
+
+function renderPage(data) {
+  const total = data.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const pageData = data.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('result-count').textContent=total;
+  document.getElementById('no-results').style.display=total===0?'block':'none';
+  document.getElementById('main-table').style.display=total===0?'none':'';
+
+  // Pagination UI
+  const bar=document.getElementById('pagination-bar');
+  bar.style.display=total>0?'flex':'none';
+  document.getElementById('pg-info').innerHTML=`Affichage <strong>${start+1}–${Math.min(start+PAGE_SIZE,total)}</strong> sur <strong>${total}</strong>`;
+  document.getElementById('pg-prev').disabled=currentPage<=1;
+  document.getElementById('pg-next').disabled=currentPage>=totalPages;
+  // Page numbers (max 5 shown)
+  const pgs=document.getElementById('pg-pages'); pgs.innerHTML='';
+  let s=Math.max(1,currentPage-2), e=Math.min(totalPages,s+4); s=Math.max(1,e-4);
+  for(let i=s;i<=e;i++){
+    const b=document.createElement('button'); b.className='pg-btn'+(i===currentPage?' active':'');
+    b.textContent=i; b.onclick=(()=>{const p=i;return()=>goPage(p);})(); pgs.appendChild(b);
+  }
+
+  const tbody=document.getElementById('tbody');tbody.innerHTML='';
+  const slicedData = pageData; // use paged slice below
+
+  slicedData.forEach(row=>{
+    const uid=(row.ID||row['Content Name (EN)']||row['Doc Name (EN)']||'')+'_'+(row['List Name']||'');
+    const isExp=expandedRows.has(uid);
+    const tr=document.createElement('tr'); if(isExp)tr.classList.add('expanded');
+
+    // ── Dynamic columns from VISIBLE_COLS ──
+    VISIBLE_COLS.forEach(col=>{
+      const val=row[col]??'';
+      const td=document.createElement('td');
+      const strVal=String(val);
+
+      // Link columns
+      if((col==='Content Published Link'||col==='Doc Published Link'||col==='Lien_url') && strVal && strVal!=='nan'){
+        const a=document.createElement('a'); a.href=strVal; a.target='_blank'; a.rel='noopener noreferrer';
+        a.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);font-weight:600;';
+        a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ouvrir';
+        td.appendChild(a);
+      }
+      // Team columns — badge
+      else if((col==='Owner Team'||col==='Author Team'||col==='Contact Team') && strVal && strVal!=='nan'){
+        const b=document.createElement('span'); b.className='badge badge-team'; b.textContent=strVal; td.appendChild(b);
+      }
+      // Long text columns — expandable cell
+      else if(col==='Content Description'||col==='Description'||strVal.length>80){
+        const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
+      }
+      // Multi-value columns (;-separated) — pills
+      else if(strVal.includes(';')){
+        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; const b=document.createElement('span'); b.className='badge badge-category'; b.textContent=s; b.style.marginRight='2px'; td.appendChild(b); });
+      }
+      // Empty
+      else if(!strVal||strVal==='nan'){
+        td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+      }
+      // Default text
+      else { td.textContent=strVal; td.style.fontSize='12px'; }
+
+      tr.appendChild(td);
+    });
+
+    // Reuse button
+    const tdReuse=document.createElement('td');
+    const btnReuse=document.createElement('button'); btnReuse.className='btn-sm btn-reuse'; btnReuse.textContent='♻️ Reuse';
+    btnReuse.onclick=(e)=>{e.stopPropagation();openReuseModal(row);}; tdReuse.appendChild(btnReuse); tr.appendChild(tdReuse);
+
+    // Metadata button
+    const tdMeta=document.createElement('td');
+    const btnMeta=document.createElement('button'); btnMeta.className='btn-sm'; btnMeta.textContent=isExp?'▲ Hide':'▼ Specific cols';
+    btnMeta.onclick=(e)=>{e.stopPropagation();toggle(uid,e);}; tdMeta.appendChild(btnMeta); tr.appendChild(tdMeta);
+
+    tbody.appendChild(tr);
+
+    // Expanded detail row — customized columns
+    if(isExp){
+      const customCols = CUSTOMIZED_COLS[row['List Name']] || [];
+      const dtr = document.createElement('tr'); dtr.className = 'detail-row';
+      const dtd = document.createElement('td'); dtd.colSpan = VISIBLE_COLS.length + 3;
+      if (!customCols.length) {
+        dtd.innerHTML = '<div class="detail-panel"><p style="color:var(--text-muted);font-size:12px;font-style:italic;padding:12px 20px">No specific columns for this list.</p></div>';
+      } else {
+        const panelDiv = document.createElement('div');
+        panelDiv.className = 'detail-panel';
+        customCols.forEach(col => {
+          const v = row[col]; const empty = !v || v === '' || v === 'nan';
+          const valStr = empty ? '' : String(v);
+          const sec = document.createElement('div');
+          sec.className = 'detail-section';
+          sec.innerHTML = '<h4>' + esc(col) + '</h4>' +
+            '<pre>' + (empty ? '<span style="color:var(--text-muted);font-style:italic">—</span>' : esc(valStr)) + '</pre>';
+          if (!empty) {
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'cell-copy'; copyBtn.textContent = '⎘ Copy';
+            copyBtn.onclick = () => {
+              navigator.clipboard.writeText(valStr).then(() => {
+                copyBtn.textContent = '✓'; setTimeout(() => copyBtn.textContent = '⎘ Copy', 1200);
+              });
+            };
+            sec.appendChild(copyBtn);
+          }
+          panelDiv.appendChild(sec);
+        });
+        dtd.appendChild(panelDiv);
+      }
+      dtr.appendChild(dtd); tbody.appendChild(dtr);
+    }
+  });
+}
+
+function toggle(id,e){e.stopPropagation();expandedRows.has(id)?expandedRows.delete(id):expandedRows.add(id);render();}
+
+function openReuseModal(row){
+  reuseTarget=row;
+  document.getElementById('reuse-modal-desc').textContent=`"${row['English Name']}" (Owner: ${row['Owner Team']||'?'})`;
+  document.getElementById('reuse-message').value='';
+  document.getElementById('reuse-modal').classList.add('open');
+}
+function closeReuseModal(){document.getElementById('reuse-modal').classList.remove('open');reuseTarget=null;}
+async function submitReuse(){
+  if(!reuseTarget)return;
+  await fetch('/api/reuse-request',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content_id:reuseTarget.ID||reuseTarget['Content Name (EN)']||reuseTarget['Doc Name (EN)']||reuseTarget['ID'],content_name:reuseTarget['Content Name (EN)']||reuseTarget['Doc Name (EN)']||reuseTarget['ID'],list_name:reuseTarget['List Name'],owner_team:reuseTarget['Owner Team'],message:document.getElementById('reuse-message').value})
+  });
+  closeReuseModal();alert('✅ Reuse request sent!');
+}
+
+document.getElementById('search').addEventListener('input', debounce(()=>{expandedRows.clear();render();}, 300));
+document.getElementById('sort-col').addEventListener('change',e=>{sortCol=e.target.value;buildHeader();render();});
+document.getElementById('sort-dir').addEventListener('change',e=>{sortDir=e.target.value;buildHeader();render();});
+document.getElementById('reuse-modal').addEventListener('click',closeReuseModal);
+initPlatformPanel();
+loadData();
+
+// ── View toggle ──
+function switchView(v) {
+  const isList = v === 'list';
+  document.getElementById('section-list').style.display = isList ? 'block' : 'none';
+  document.getElementById('section-card').style.display = isList ? 'none'  : 'block';
+  document.getElementById('vbtn-list').classList.toggle('active', isList);
+  document.getElementById('vbtn-card').classList.toggle('active', !isList);
+  // Met à jour l'URL sans recharger
+  const url = new URL(window.location);
+  if (isList) url.searchParams.delete('view');
+  else        url.searchParams.set('view','card');
+  history.replaceState(null,'',url);
+  // Init card view au 1er affichage
+  if (!isList && typeof window.kbInit === 'function' && !window._kbInited) {
+    window._kbInited = true;
+    window.kbInit();
+  }
+}
+// Auto-switch si ?view=card dans l'URL
+if (new URLSearchParams(window.location.search).get('view') === 'card') switchView('card');
+</script>
+{% endblock %}

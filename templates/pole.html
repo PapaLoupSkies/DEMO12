@@ -1,0 +1,863 @@
+{% extends "base.html" %}
+{% block title %}Content by Pôle — Knowledge Platform{% endblock %}
+
+{% block extra_head %}
+<style>
+  .cascade-wrap { padding: 12px 24px; display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; border-bottom: 1px solid var(--border); background: var(--white); }
+  .cascade-group { display: flex; flex-direction: column; gap: 4px; }
+  .cascade-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
+  .cascade-sel { padding: 8px 28px 8px 11px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; outline: none; cursor: pointer; appearance: none; min-width: 180px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+  .cascade-sel:focus { border-color: var(--accent); }
+  .cascade-arrow { font-size: 16px; color: var(--text-muted); padding-bottom: 8px; }
+  .cascade-reset { padding: 8px 12px; border: 1px solid var(--border); border-radius: 7px; background: none; color: var(--text-muted); font-family: 'Inter', sans-serif; font-size: 12px; cursor: pointer; }
+  .cascade-reset:hover { border-color: var(--red); color: var(--red); }
+  .breadcrumb { font-size: 12px; color: var(--text-muted); padding: 6px 24px; background: var(--bg); border-bottom: 1px solid var(--border); }
+  .breadcrumb strong { color: var(--accent); }
+
+  /* Dashboard 4 blocs */
+  .dashboard { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; gap: 16px; padding: 16px 24px; }
+  .dash-block { background: var(--white); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+  .dash-head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--bg); flex-shrink: 0; }
+  .dash-head-title { font-size: 12px; font-weight: 600; color: var(--text); }
+  .dash-head-cnt { font-size: 11px; color: var(--text-muted); background: var(--white); border: 0.5px solid var(--border); border-radius: 20px; padding: 2px 8px; }
+  .dash-body { overflow-y: auto; max-height: 260px; }
+  .dash-body table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .dash-body thead th { padding: 6px 10px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); background: var(--bg); border-bottom: 0.5px solid var(--border); text-align: left; position: sticky; top: 0; }
+  .dash-body tbody td { padding: 6px 10px; border-bottom: 0.5px solid var(--border-light); vertical-align: middle; }
+  .dash-body tbody tr:hover td { background: #f0f7f5; }
+  .dash-body tbody tr:last-child td { border-bottom: none; }
+  .dash-avatar { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+  .dash-faq-q { font-size: 11px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .dash-faq-a { font-size: 10px; color: var(--text-muted); line-height: 1.4; }
+  .dash-faq-item { padding: 8px 12px; border-bottom: 0.5px solid var(--border-light); }
+  .dash-faq-item:last-child { border-bottom: none; }
+  .dash-empty { padding: 24px; text-align: center; font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+  .btn-sm-reuse { padding:2px 6px;border-radius:4px;font-size:10px;background:#FDF3E0;color:#854F0B;border:0.5px solid #E8C880;cursor:pointer; }
+  .btn-sm-reuse:hover { background:#EFC87A; }
+  .tag { display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:500; }
+
+  /* Zone tabs */
+  .zone-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); background: var(--white); padding: 0 24px; }
+  .zone-tab { padding: 10px 18px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; background: none; border-top: none; border-left: none; border-right: none; font-family: 'Inter', sans-serif; }
+  .zone-tab:hover { color: var(--accent); }
+  .zone-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+  .zone-tab.admin-tab { color: var(--accent2); }
+  .zone-tab.admin-tab.active { border-bottom-color: var(--accent2); }
+  .zone-content { display: none; }
+  .zone-content.active { display: block; }
+
+  /* Pole Intro Block */
+  .pole-intro { margin:0; border-bottom:1px solid var(--border); background:var(--white); overflow:hidden; transition:max-height .4s ease; max-height:1200px; }
+  .pole-intro.collapsed { max-height:44px; }
+  .pi-header { padding:11px 24px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; min-height:44px; flex-shrink:0; }
+  .pi-header:hover { background:var(--bg); }
+  .pi-title { font-size:13px; font-weight:700; color:var(--accent); display:flex; align-items:center; gap:8px; }
+  .pi-toggle { font-size:11px; color:var(--text-muted); border:1px solid var(--border); border-radius:5px; padding:3px 8px; background:none; cursor:pointer; font-family:'Inter',sans-serif; }
+  .pi-toggle:hover { border-color:var(--accent); color:var(--accent); }
+  .pi-body { padding:0 24px 16px; }
+  .pi-stats { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .pi-stat { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 16px; text-align:center; min-width:90px; }
+  .pi-stat strong { display:block; font-size:22px; font-weight:700; color:var(--accent); }
+  .pi-stat span { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+  .pi-acts { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:10px; }
+  .pi-act-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 13px; }
+  .pi-act-cat { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--accent); margin-bottom:3px; }
+  .pi-act-sub { font-size:12px; font-weight:600; color:var(--text); margin-bottom:5px; }
+  .pi-act-desc { font-size:12px; color:var(--text); line-height:1.5; margin-top:4px; }
+  .pi-empty { font-size:12px; color:var(--text-muted); font-style:italic; padding:8px 0; }
+  .pi-teams { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .pi-team-chip { padding:3px 9px; border-radius:20px; font-size:11px; background:var(--accent-light); color:var(--accent); border:1px solid #b3d9d4; }
+
+  /* Editable grid */
+  .editable-cell { cursor: pointer; min-width: 60px; }
+  .editable-cell:hover { background: #f0f7f5; }
+  .editable-cell input, .editable-cell select { width: 100%; padding: 3px 6px; border: 1px solid var(--accent); border-radius: 4px; font-size: 12px; font-family: 'Inter', sans-serif; background: #fff; outline: none; }
+  .btn-add-row { padding: 7px 14px; background: var(--accent); color: #fff; border: none; border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer; margin: 12px 24px; }
+  .btn-add-row:hover { background: #005548; }
+  .btn-del-row { padding: 2px 7px; background: none; border: 1px solid var(--red); color: var(--red); border-radius: 4px; font-size: 10px; cursor: pointer; }
+  .btn-del-row:hover { background: var(--rejected-bg); }
+
+  /* Final Version Library */
+  .library-wrap { padding: 16px 24px 40px; }
+  .library-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .library-title { font-family: 'Libre Baskerville', serif; font-size: 15px; font-weight: 700; color: var(--accent2); }
+  .upload-zone { border: 2px dashed var(--border); border-radius: 10px; padding: 28px 20px; text-align: center; background: var(--bg); margin-bottom: 16px; cursor: pointer; transition: all .2s; }
+  .upload-zone:hover { border-color: var(--accent); background: var(--accent-light); }
+  .upload-zone input[type=file] { display: none; }
+  .upload-zone-text { font-size: 13px; color: var(--text-muted); }
+  .upload-zone-text strong { color: var(--accent); }
+  .upload-form { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; display: none; }
+  .upload-form.open { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); }
+  .form-group input, .form-group select, .form-group textarea { padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; outline: none; }
+  .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+
+  .doc-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+  .doc-icon { font-size: 24px; flex-shrink: 0; }
+  .doc-info { flex: 1; min-width: 0; }
+  .doc-name { font-weight: 500; font-size: 13px; color: var(--text); }
+  .doc-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .doc-version { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--accent-light); color: var(--accent); border: 1px solid #b3d9d4; margin-left: 6px; }
+  .doc-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-doc { padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; border: 1px solid var(--border); background: var(--white); color: var(--text-muted); font-family: 'Inter', sans-serif; }
+  .btn-doc:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-doc-del:hover { border-color: var(--red); color: var(--red); }
+
+  /* Admin center */
+  .admin-center-wrap { padding: 16px 24px 40px; }
+  .summary-cards { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .sc { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; text-align: center; min-width: 90px; }
+  .sc strong { display: block; font-size: 22px; font-weight: 600; }
+  .sc span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Pole Intro Block -->
+<div class="pole-intro collapsed" id="pole-intro">
+  <div class="pi-header" onclick="togglePoleIntro()">
+    <span class="pi-title" id="pi-title">📋 Select a department to see its overview</span>
+    <button class="pi-toggle" id="pi-toggle-btn">▼ Expand</button>
+  </div>
+  <div class="pi-body" id="pi-body">
+    <div class="pi-empty" id="pi-empty">Select a department using the filters below.</div>
+    <div id="pi-content" style="display:none">
+      <div class="pi-stats" id="pi-stats"></div>
+      <div class="pi-teams" id="pi-teams"></div>
+      <div id="pi-acts-title" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px;display:none">Activities</div>
+      <div class="pi-acts" id="pi-acts"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Cascade filters -->
+<div class="cascade-wrap">
+  <div class="cascade-group">
+    <span class="cascade-label">Department</span>
+    <select class="cascade-sel" id="sel-dept" onchange="onDeptChange()">
+      <option value="">All Departments</option>
+    </select>
+  </div>
+  <span class="cascade-arrow">›</span>
+  <div class="cascade-group">
+    <span class="cascade-label">Sub Department</span>
+    <select class="cascade-sel" id="sel-subdept" onchange="onSubChange()" disabled>
+      <option value="">All</option>
+    </select>
+  </div>
+  <span class="cascade-arrow">›</span>
+  <div class="cascade-group">
+    <span class="cascade-label">Team</span>
+    <select class="cascade-sel" id="sel-team" onchange="onTeamChange()" disabled>
+      <option value="">All</option>
+    </select>
+  </div>
+  <button class="cascade-reset" onclick="resetCascade()">↺ Reset</button>
+  <div class="cascade-group" style="margin-left:16px">
+    <span class="cascade-label">Platform</span>
+    <select class="cascade-sel" id="sel-platform" onchange="loadPoleData()" style="min-width:160px">
+      <option value="">All Platforms</option>
+      <option value="Intranet">Intranet</option>
+      <option value="Corporate Site France">Corporate Site France</option>
+      <option value="Corporate Site Brazil">Corporate Site Brazil</option>
+      <option value="Corporate Site USA">Corporate Site USA</option>
+      <option value="Corporate Site CIB">Corporate Site CIB</option>
+      <option value="SharePoint">SharePoint</option>
+      <option value="Mass Mailing">Mass Mailing</option>
+      <option value="LinkedIn">LinkedIn</option>
+      <option value="Twitter/X">Twitter/X</option>
+      <option value="Internal Only">Internal Only</option>
+    </select>
+  </div>
+  <div class="count-badge" style="margin-left:auto">Results: <span id="result-count">—</span></div>
+</div>
+
+<div class="breadcrumb" id="breadcrumb" style="display:none">
+  Showing: <strong id="breadcrumb-text"></strong>
+</div>
+
+<!-- Zone tabs -->
+<div class="zone-tabs" id="zone-tabs">
+  <button class="zone-tab active" onclick="showZone('read',this)">📋 Content Catalog</button>
+  {% if user.access_group in ['Editor','Super Admin'] %}
+  <button class="zone-tab admin-tab" onclick="showZone('edit',this)">✏️ Editable Grid</button>
+  <button class="zone-tab admin-tab" onclick="showZone('library',this)">📁 Final Version Library</button>
+  <button class="zone-tab admin-tab" onclick="showZone('admin',this)">⚙️ Admin Center</button>
+  {% endif %}
+</div>
+
+<!-- ZONE 1: Dashboard 4 blocs -->
+<div class="zone-content active" id="zone-read">
+  <div class="dashboard">
+
+    <!-- Bloc 1: Documents & Articles -->
+    <div class="dash-block">
+      <div class="dash-head">
+        <span class="dash-head-title">&#128196; Documents &amp; Articles</span>
+        <span class="dash-head-cnt" id="cnt-docs">—</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-empty" id="empty-docs">Select a department to view.</div>
+        <table id="tbl-docs" style="display:none">
+          <thead><tr><th>Name</th><th>Sub Category</th><th>Classification</th><th></th></tr></thead>
+          <tbody id="tbody-docs"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bloc 2: Data Catalog -->
+    <div class="dash-block">
+      <div class="dash-head">
+        <span class="dash-head-title">&#128202; Data Catalog</span>
+        <span class="dash-head-cnt" id="cnt-catalog">—</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-empty" id="empty-catalog">Select a department to view.</div>
+        <table id="tbl-catalog" style="display:none">
+          <thead><tr><th>Name</th><th>Category</th><th>Owner Team</th><th></th></tr></thead>
+          <tbody id="tbody-catalog"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bloc 3: People -->
+    <div class="dash-block">
+      <div class="dash-head">
+        <span class="dash-head-title">&#128101; People</span>
+        <span class="dash-head-cnt" id="cnt-people">—</span>
+      </div>
+      <div class="dash-body">
+        <div class="dash-empty" id="empty-people">Select a department to view.</div>
+        <table id="tbl-people" style="display:none">
+          <thead><tr><th>Name</th><th>Team</th><th>Role</th></tr></thead>
+          <tbody id="tbody-people"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bloc 4: FAQ -->
+    <div class="dash-block">
+      <div class="dash-head">
+        <span class="dash-head-title">&#10067; FAQ</span>
+        <span class="dash-head-cnt" id="cnt-faq">—</span>
+      </div>
+      <div class="dash-body" id="faq-body-dash">
+        <div class="dash-empty" id="empty-faq">Select a department to view.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ZONE 2: Editable Grid -->
+{% if user.access_group in ['Editor','Super Admin'] %}
+<div class="zone-content" id="zone-edit">
+  <div style="padding:10px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center">
+    <select id="edit-list-sel" onchange="loadEditGrid()" style="padding:7px 28px 7px 11px;border:1px solid var(--border);border-radius:7px;font-size:13px;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 8px center">
+      <option value="">Select a list to edit...</option>
+      <option value="content_list">Content List</option>
+      <option value="kpi_list">KPI List</option>
+      <option value="business_glossary">Business Glossary</option>
+      <option value="activity_communication">Activity Communication</option>
+    </select>
+    <span id="edit-grid-info" style="font-size:12px;color:var(--text-muted)"></span>
+  </div>
+  <div class="table-wrap">
+    <div id="edit-grid-wrap" style="overflow-x:auto">
+      <p style="color:var(--text-muted);font-size:13px;padding:20px">Select a list above to edit its contents.</p>
+    </div>
+  </div>
+  <button class="btn-add-row" id="btn-add-row" style="display:none" onclick="addRow()">+ Add Row</button>
+</div>
+
+<!-- ZONE 3: Final Version Library -->
+<div class="zone-content" id="zone-library">
+  <div class="library-wrap">
+    <div class="library-header">
+      <div class="library-title">📁 Final Version Library</div>
+      <button class="btn-sm btn-primary" onclick="toggleUploadForm()">+ Upload PDF</button>
+    </div>
+
+    <!-- Upload form -->
+    <div class="upload-form" id="upload-form">
+      <div style="font-size:13px;font-weight:600;margin-bottom:12px;color:var(--accent2)">Upload new document</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Title (English) *</label><input type="text" id="up-title" placeholder="Document title..."></div>
+        <div class="form-group"><label>Title (French)</label><input type="text" id="up-fr-title" placeholder="Titre français..."></div>
+        <div class="form-group"><label>Sub Category</label>
+          <select id="up-subcat"><option>Finished Document</option><option>Policy</option><option>Report</option><option>Template</option><option>Guide</option></select>
+        </div>
+        <div class="form-group"><label>Classification</label>
+          <select id="up-classif"><option value="Internal">Internal</option><option value="External">External</option></select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1"><label>Description</label><input type="text" id="up-desc" placeholder="Brief description..."></div>
+      </div>
+      <div class="upload-zone" onclick="document.getElementById('up-file').click()">
+        <input type="file" id="up-file" accept=".pdf" onchange="fileSelected(this)">
+        <div class="upload-zone-text" id="upload-zone-text">
+          <strong>Click to select PDF</strong> or drag & drop<br>
+          <span style="font-size:11px">PDF only — max 10MB</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn-cancel" onclick="toggleUploadForm()">Cancel</button>
+        <button class="btn-primary" onclick="uploadDoc()">Upload</button>
+      </div>
+    </div>
+
+    <!-- Documents list -->
+    <div id="docs-list"><div class="loading">Select a pole to view documents.</div></div>
+  </div>
+</div>
+
+<!-- ZONE 4: Admin Center -->
+<div class="zone-content" id="zone-admin">
+  <div class="admin-center-wrap">
+    <div style="font-family:'Libre Baskerville',serif;font-size:15px;font-weight:700;color:var(--accent2);margin-bottom:14px">⚙️ Admin Center</div>
+    <div class="summary-cards">
+      <div class="sc"><strong style="color:var(--pending)" id="cnt-pending">—</strong><span>Pending</span></div>
+      <div class="sc"><strong style="color:var(--approved)" id="cnt-approved">—</strong><span>Approved</span></div>
+      <div class="sc"><strong style="color:var(--rejected)" id="cnt-rejected">—</strong><span>Rejected</span></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <span class="chip active" data-req="all">All</span>
+      <span class="chip" data-req="pending">Pending</span>
+      <span class="chip" data-req="approved">Approved</span>
+      <span class="chip" data-req="rejected">Rejected</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;min-width:600px;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+      <thead><tr class="header-row">
+        <th><div class="th-inner"><span class="th-label">#</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Content</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Requested by</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Team</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Message</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Date</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Status</span></div></th>
+        <th><div class="th-inner"><span class="th-label">Actions</span></div></th>
+      </tr></thead>
+      <tbody id="admin-tbody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+    </table>
+    </div>
+
+    <div style="margin-top:24px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px">My Reuse Requests</div>
+      <div id="my-reuse-wrap"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Reuse Modal -->
+<div class="modal-overlay" id="reuse-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>♻️ Request to Reuse</h3>
+    <p id="reuse-desc"></p>
+    <textarea id="reuse-msg" placeholder="Optional message..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeReuse()">Cancel</button>
+      <button class="btn-primary" onclick="submitReuse()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IS_ADMIN = {{ 'true' if user.access_group in ['Editor','Super Admin'] else 'false' }};
+const USER_TEAM = {{ user.team | tojson }};
+const USER_DEPT = {{ user.department | tojson }};
+const INTRO_DATA = {{ intro_json | safe }};
+let taxonomy = {}, allData = [], custCols = {};
+let currentDept='', currentSub='', currentTeam='';
+let sortReadCol='English Name', sortReadDir='asc';
+let colFilters = {}, expandedRows = new Set();
+let allRequests=[], activeReqFilter='all', reuseTarget=null;
+let editListName='', editData=[], editCols=[];
+
+const VISIBLE_COLS = ['English Name','French Name','Content Category','Content Sub Category','Classification','Owner Team','Contact Team'];
+
+async function initPage() {
+  const res = await fetch('/api/taxonomy');
+  const d = await res.json();
+  taxonomy = d.taxonomy;
+  const dSel = document.getElementById('sel-dept');
+  Object.keys(taxonomy).sort().forEach(dept => {
+    dSel.innerHTML += `<option value="${esc(dept)}">${esc(dept)}</option>`;
+  });
+  if (IS_ADMIN) { loadAdminRequests(); loadMyReuse(); }
+}
+
+// ── Pole Intro Block ────────────────────────────────────────
+let introExpanded = false;
+
+function togglePoleIntro() {
+  const block = document.getElementById('pole-intro');
+  const btn   = document.getElementById('pi-toggle-btn');
+  introExpanded = !introExpanded;
+  if (introExpanded) {
+    block.classList.remove('collapsed');
+    btn.textContent = '▲ Collapse';
+  } else {
+    block.classList.add('collapsed');
+    btn.textContent = '▼ Expand';
+  }
+}
+
+function updatePoleIntro(dept) {
+  if (!dept) {
+    document.getElementById('pi-title').textContent = '📋 Select a department to see its overview';
+    document.getElementById('pi-empty').style.display = '';
+    document.getElementById('pi-content').style.display = 'none';
+    document.getElementById('pole-intro').classList.add('collapsed');
+    document.getElementById('pi-toggle-btn').textContent = '▼ Expand';
+    introExpanded = false;
+    return;
+  }
+
+  const data = INTRO_DATA[dept];
+  if (!data) return;
+
+  // Titre
+  document.getElementById('pi-title').textContent = `📋 ${dept} — Department Overview`;
+
+  // Stats
+  document.getElementById('pi-stats').innerHTML = [
+    [data.nb_teams,             'Teams'],
+    [data.nb_sub_depts,         'Sub-Depts'],
+    [data.nb_people,            'People'],
+    [data.activities.length,    'Activities'],
+  ].map(([n,l]) => `<div class="pi-stat"><strong>${n}</strong><span>${l}</span></div>`).join('');
+
+  // Teams chips
+  document.getElementById('pi-teams').innerHTML =
+    (data.teams||[]).map(t => `<span class="pi-team-chip">${esc(t)}</span>`).join('');
+
+  // Activity cards
+  const acts = data.activities || [];
+  if (acts.length === 0) {
+    document.getElementById('pi-acts').innerHTML = '<div class="pi-empty">No activities mapped for this department.</div>';
+  } else {
+    document.getElementById('pi-acts').innerHTML = acts.map(a => `
+      <div class="pi-act-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span class="pi-team-chip">${esc(a['Activity Sub Category']||'')}</span>
+        </div>
+        <div class="pi-act-desc">${esc(a['Description']||'<em>No description available.</em>')}</div>
+      </div>`).join('');
+  }
+
+  // Afficher et expand
+  document.getElementById('pi-empty').style.display = 'none';
+  document.getElementById('pi-content').style.display = '';
+  document.getElementById('pole-intro').classList.remove('collapsed');
+  document.getElementById('pi-toggle-btn').textContent = '▲ Collapse';
+  introExpanded = true;
+}
+
+function onDeptChange() {
+  currentDept = document.getElementById('sel-dept').value;
+  updatePoleIntro(currentDept);
+  currentSub=''; currentTeam='';
+  const sdSel=document.getElementById('sel-subdept'), tSel=document.getElementById('sel-team');
+  sdSel.innerHTML='<option value="">All</option>';
+  tSel.innerHTML='<option value="">All</option>'; tSel.disabled=true;
+  if(currentDept && taxonomy[currentDept]) {
+    Object.keys(taxonomy[currentDept]).sort().forEach(sd=>sdSel.innerHTML+=`<option value="${esc(sd)}">${esc(sd)}</option>`);
+    sdSel.disabled=false;
+  } else sdSel.disabled=true;
+  loadPoleData();
+}
+function onSubChange() {
+  currentSub=document.getElementById('sel-subdept').value; currentTeam='';
+  const tSel=document.getElementById('sel-team');
+  tSel.innerHTML='<option value="">All</option>';
+  if(currentDept&&currentSub&&taxonomy[currentDept]&&taxonomy[currentDept][currentSub]) {
+    taxonomy[currentDept][currentSub].sort().forEach(t=>tSel.innerHTML+=`<option value="${esc(t)}">${esc(t)}</option>`);
+    tSel.disabled=false;
+  } else tSel.disabled=true;
+  loadPoleData();
+}
+function onTeamChange() { currentTeam=document.getElementById('sel-team').value; loadPoleData(); }
+
+function resetCascade() {
+  document.getElementById('sel-dept').value='';
+  document.getElementById('sel-subdept').innerHTML='<option value="">All</option>'; document.getElementById('sel-subdept').disabled=true;
+  document.getElementById('sel-team').innerHTML='<option value="">All</option>'; document.getElementById('sel-team').disabled=true;
+  currentDept=''; currentSub=''; currentTeam='';
+  document.getElementById('breadcrumb').style.display='none';
+  allData=[];
+  document.getElementById('result-count').textContent='—';
+  updatePoleIntro('');
+  document.getElementById('sel-platform').value='';
+  // Reset dashboard blocs
+  ['docs','catalog','people','faq'].forEach(id => {
+    const cnt = document.getElementById('cnt-'+id);
+    const empty = document.getElementById('empty-'+id);
+    if(cnt) cnt.textContent='—';
+    if(empty) { empty.style.display=''; empty.textContent='Select a department to view.'; }
+    const tbl = document.getElementById('tbl-'+id);
+    if(tbl) tbl.style.display='none';
+    const tbody = document.getElementById('tbody-'+id);
+    if(tbody) tbody.innerHTML='';
+  });
+  // Reset FAQ body
+  const faqBody = document.getElementById('faq-body-dash');
+  if(faqBody) { faqBody.querySelectorAll('.dash-faq-item').forEach(el=>el.remove()); }
+}
+
+function updateBreadcrumb() {
+  const parts=[currentDept,currentSub,currentTeam].filter(Boolean);
+  if(parts.length) { document.getElementById('breadcrumb').style.display=''; document.getElementById('breadcrumb-text').textContent=parts.join(' › '); }
+  else document.getElementById('breadcrumb').style.display='none';
+}
+
+async function loadPoleData() {
+  if (!currentDept && !currentSub && !currentTeam) return;
+  updateBreadcrumb();
+
+  // ── Docs & Articles ───────────────────────────────────────
+  const poleRes = await fetch(`/api/pole-data?department=${encodeURIComponent(currentDept)}&sub_department=${encodeURIComponent(currentSub)}&team=${encodeURIComponent(currentTeam)}`);
+  const poleJson = await poleRes.json();
+  const allRows_raw = poleJson.rows || [];
+  const selPlatform = document.getElementById('sel-platform').value;
+  const allRows = selPlatform
+    ? allRows_raw.filter(r => (r['Platform']||'').split(';').map(s=>s.trim()).includes(selPlatform))
+    : allRows_raw;
+
+  const DOC_CATS = ['Document','Article','CP','Procedure','Position Paper','Actualite','Communique','Press Release'];
+  const docs = allRows.filter(r => {
+    const cat = (r['Content Category']||'').toLowerCase();
+    return DOC_CATS.some(d => cat.includes(d.toLowerCase()));
+  });
+  const catalog = allRows.filter(r => {
+    const cat = (r['Content Category']||'').toLowerCase();
+    return !DOC_CATS.some(d => cat.includes(d.toLowerCase()));
+  });
+
+  // Render docs
+  document.getElementById('cnt-docs').textContent = docs.length + ' items';
+  if (docs.length === 0) {
+    document.getElementById('empty-docs').style.display = '';
+    document.getElementById('tbl-docs').style.display = 'none';
+  } else {
+    document.getElementById('empty-docs').style.display = 'none';
+    document.getElementById('tbl-docs').style.display = '';
+    document.getElementById('tbody-docs').innerHTML = docs.map(r => {
+      const cl = r['Classification']||'';
+      const clBg = cl==='External'?'E8EEF8':'E8F5EE', clCol = cl==='External'?'2C4FA3':'1A6B3C';
+      return `<tr>
+        <td style="font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r['English Name']||'')}</td>
+        <td><span class="tag" style="background:#EDE9FB;color:#4A3F8F">${esc(r['Content Sub Category']||r['Content Category']||'')}</span></td>
+        <td><span class="tag" style="background:#${clBg};color:#${clCol}">${esc(cl)}</span></td>
+        <td><button class="btn-sm-reuse" onclick="openReuseModal('${esc(r['ID']||'')}','${esc(r['English Name']||'')}','${esc(r['Owner Team']||'')}','${esc(r['List Name']||'')}')">&#x267B;</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Render catalog (KPI, Glossaire, Activity Comms...)
+  document.getElementById('cnt-catalog').textContent = catalog.length + ' items';
+  if (catalog.length === 0) {
+    document.getElementById('empty-catalog').style.display = '';
+    document.getElementById('tbl-catalog').style.display = 'none';
+  } else {
+    document.getElementById('empty-catalog').style.display = 'none';
+    document.getElementById('tbl-catalog').style.display = '';
+    document.getElementById('tbody-catalog').innerHTML = catalog.map(r => {
+      const cat = r['Content Category']||'';
+      const colors = {'KPI':'EDE9FB,4A3F8F','Business Glossary':'FDF3E0,B07D2A','Activity Communication':'E8EEF8,2C4FA3'};
+      const [bg,col] = (colors[cat]||'E6F2F0,006B5E').split(',');
+      return `<tr>
+        <td style="font-weight:500;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r['English Name']||'')}</td>
+        <td><span class="tag" style="background:#${bg};color:#${col}">${esc(cat)}</span></td>
+        <td style="color:var(--text-muted);font-size:11px">${esc(r['Owner Team']||'')}</td>
+        <td><button class="btn-sm-reuse" onclick="openReuseModal('${esc(r['ID']||'')}','${esc(r['English Name']||'')}','${esc(r['Owner Team']||'')}','${esc(r['List Name']||'')}')">&#x267B;</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── People ────────────────────────────────────────────────
+  const params = new URLSearchParams();
+  if (currentTeam) params.append('team', currentTeam);
+  else if (currentSub) { params.append('department', currentDept); params.append('sub_department', currentSub); }
+  else if (currentDept) params.append('department', currentDept);
+  const pplRes = await fetch('/api/people?' + params.toString());
+  const pplJson = await pplRes.json();
+  const people = pplJson.employees || [];
+
+  document.getElementById('cnt-people').textContent = people.length + ' people';
+  if (people.length === 0) {
+    document.getElementById('empty-people').style.display = '';
+    document.getElementById('tbl-people').style.display = 'none';
+  } else {
+    document.getElementById('empty-people').style.display = 'none';
+    document.getElementById('tbl-people').style.display = '';
+    const avatarColors = ['E6F2F0,006B5E','EDE9FB,4A3F8F','FDF3E0,B07D2A','E8EEF8,2C4FA3','FDECEA,C0392B'];
+    document.getElementById('tbody-people').innerHTML = people.map((p, i) => {
+      const name = p['Employee Name']||p['Name']||'';
+      const initials = name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const [bg,col] = avatarColors[i%avatarColors.length].split(',');
+      const role = p['Activity Category']||p['Team']||'';
+      return `<tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:7px">
+            <div class="dash-avatar" style="background:#${bg};color:#${col}">${initials}</div>
+            <span style="font-weight:500">${esc(name)}</span>
+          </div>
+        </td>
+        <td style="color:var(--text-muted)">${esc(p['Team']||'')}</td>
+        <td style="font-size:10px;color:var(--text-muted)">${esc(role)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── FAQ ──────────────────────────────────────────────────
+  const faqRes = await fetch('/api/faq');
+  const faqJson = await faqRes.json();
+  const allFaqs = faqJson.faqs || [];
+  // Filtrer FAQ par département si possible
+  const deptFaqs = allFaqs; // toutes les FAQ (pas de filtre dept dans le modèle actuel)
+
+  document.getElementById('cnt-faq').textContent = deptFaqs.length + ' questions';
+  const faqBody2 = document.getElementById('faq-body-dash');
+  document.getElementById('empty-faq').style.display = 'none';
+  const existing = faqBody2.querySelectorAll('.dash-faq-item');
+  existing.forEach(el => el.remove());
+
+  if (deptFaqs.length === 0) {
+    document.getElementById('empty-faq').style.display = '';
+  } else {
+    deptFaqs.forEach(f => {
+      const item = document.createElement('div');
+      item.className = 'dash-faq-item';
+      const answered = f['Status'] === 'answered';
+      const statusBg = answered ? '#E1F5EE' : '#FDF3E0';
+      const statusCol = answered ? '#085041' : '#854F0B';
+      const statusLabel = answered ? 'Repondu' : 'En attente';
+      item.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:${answered&&f['Answer']?'3px':'0'}">
+          <span style="padding:1px 6px;border-radius:10px;font-size:9px;font-weight:600;background:${statusBg};color:${statusCol};flex-shrink:0">${statusLabel}</span>
+          <span class="dash-faq-q">${esc(f['Question']||'')}</span>
+        </div>
+        ${answered && f['Answer'] ? `<div class="dash-faq-a">${esc(f['Answer'])}</div>` : ''}`;
+      faqBody.appendChild(item);
+    });
+  }
+
+  // Update global result count
+  document.getElementById('result-count').textContent = allRows.length;
+}
+
+
+async function loadEditGrid() {
+  editListName=document.getElementById('edit-list-sel').value;
+  if(!editListName){document.getElementById('edit-grid-wrap').innerHTML='<p style="color:var(--text-muted);font-size:13px;padding:20px">Select a list above.</p>';document.getElementById('btn-add-row').style.display='none';return;}
+  const params=new URLSearchParams();
+  if(currentDept) params.set('department',currentDept);
+  if(currentSub) params.set('sub_department',currentSub);
+  if(currentTeam) params.set('team',currentTeam);
+  const res=await fetch('/api/pole-data?'+params);
+  const d=await res.json();
+  editData=d.rows.filter(r=>(r['List Name']||'').toLowerCase().replace(/ /g,'_')===editListName);
+  if(editData.length>0) editCols=Object.keys(editData[0]).filter(c=>c!=='List Name');
+  else {
+    const res2=await fetch('/api/catalog');
+    const d2=await res2.json();
+    const sample=d2.rows.find(r=>(r['List Name']||'').toLowerCase().replace(/ /g,'_')===editListName);
+    editCols=sample?Object.keys(sample).filter(c=>c!=='List Name'):[];
+  }
+  document.getElementById('edit-grid-info').textContent=`${editData.length} rows — click any cell to edit`;
+  document.getElementById('btn-add-row').style.display='';
+  renderEditGrid();
+}
+
+function renderEditGrid() {
+  const wrap=document.getElementById('edit-grid-wrap');
+  if(!editCols.length){wrap.innerHTML='<p style="padding:20px;color:var(--text-muted)">No data.</p>';return;}
+  let html=`<table style="width:100%;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07);min-width:600px"><thead><tr class="header-row">`;
+  editCols.forEach(col=>html+=`<th><div class="th-inner"><span class="th-label">${esc(col)}</span></div></th>`);
+  html+='<th style="background:var(--bg)"></th></tr></thead><tbody>';
+  editData.forEach((row,ri)=>{
+    html+=`<tr style="border-bottom:1px solid var(--border-light)">`;
+    editCols.forEach(col=>{
+      const v=esc(String(row[col]||''));
+      html+=`<td class="editable-cell" onclick="makeEditable(this,'${esc(col)}','${esc(row.ID||'')}',${ri})" style="padding:9px 12px;font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v}">${v||'—'}</td>`;
+    });
+    html+=`<td style="padding:6px 10px"><button class="btn-del-row" onclick="deleteRow('${esc(row.ID||'')}',${ri})">✕</button></td>`;
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  wrap.innerHTML=html;
+}
+
+function makeEditable(td, col, id, ri) {
+  if(td.querySelector('input')) return;
+  const cur=td.textContent.trim()==='—'?'':td.textContent.trim();
+  td.innerHTML=`<input type="text" value="${esc(cur)}" onblur="saveCell(this,'${esc(col)}','${esc(id)}',${ri})" onkeydown="if(event.key==='Enter')this.blur()">`;
+  td.querySelector('input').focus();
+}
+
+async function saveCell(inp, col, id, ri) {
+  const val=inp.value;
+  inp.closest('td').textContent=val||'—';
+  if(editData[ri]) editData[ri][col]=val;
+  await fetch('/api/catalog/update',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({list_name:editListName,id,column:col,value:val})});
+}
+
+async function deleteRow(id, ri) {
+  if(!confirm('Delete this row?')) return;
+  await fetch('/api/catalog/delete-row',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({list_name:editListName,id})});
+  editData.splice(ri,1); renderEditGrid();
+}
+
+function addRow() {
+  const newRow={};
+  editCols.forEach(col=>newRow[col]='');
+  newRow['Owner Team']=USER_TEAM;
+  editData.push(newRow); renderEditGrid();
+  // scroll to bottom
+  document.getElementById('edit-grid-wrap').scrollTop=99999;
+}
+
+// ── FINAL VERSION LIBRARY ──────────────────────────────────
+function toggleUploadForm(){
+  const f=document.getElementById('upload-form');
+  f.classList.toggle('open');
+}
+function fileSelected(inp){
+  document.getElementById('upload-zone-text').innerHTML=`<strong style="color:var(--accent)">${inp.files[0].name}</strong> ready to upload`;
+}
+
+async function uploadDoc(){
+  const title=document.getElementById('up-title').value.trim();
+  if(!title){alert('Title is required');return;}
+  const file=document.getElementById('up-file').files[0];
+  if(!file){alert('Please select a PDF file');return;}
+  const fd=new FormData();
+  fd.append('file',file);
+  fd.append('title',title);
+  fd.append('french_name',document.getElementById('up-fr-title').value);
+  fd.append('sub_category',document.getElementById('up-subcat').value);
+  fd.append('classification',document.getElementById('up-classif').value);
+  fd.append('description',document.getElementById('up-desc').value);
+  fd.append('owner_team',USER_TEAM);
+  const res=await fetch('/api/documents/upload',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.ok){
+    toggleUploadForm();
+    document.getElementById('up-title').value=''; document.getElementById('up-file').value='';
+    document.getElementById('upload-zone-text').innerHTML='<strong>Click to select PDF</strong> or drag & drop<br><span style="font-size:11px">PDF only</span>';
+    loadDocs();
+  } else alert('Upload error: '+d.error);
+}
+
+async function loadDocs(){
+  const params=new URLSearchParams();
+  if(currentDept) params.set('department',currentDept);
+  if(currentSub) params.set('sub_department',currentSub);
+  if(currentTeam) params.set('team',currentTeam);
+  const res=await fetch('/api/documents?'+params);
+  const d=await res.json();
+  const wrap=document.getElementById('docs-list');
+  if(!d.documents.length){wrap.innerHTML='<p style="color:var(--text-muted);font-size:13px">No documents uploaded yet.</p>';return;}
+  wrap.innerHTML=d.documents.map(doc=>`
+    <div class="doc-card">
+      <div class="doc-icon">📄</div>
+      <div class="doc-info">
+        <div class="doc-name">${esc(doc['English Name']||doc.ID)}<span class="doc-version">${esc(doc.Version||'v1')}</span></div>
+        <div class="doc-meta">${esc(doc['Owner Team']||'')} · ${esc(doc['Upload Date']||'')} · ${esc(doc['File Size']||'')} · <span class="badge badge-category">${esc(doc['Content Sub Category']||'')}</span></div>
+        ${doc.Description?`<div style="font-size:11px;color:var(--text-muted);margin-top:2px">${esc(doc.Description)}</div>`:''}
+      </div>
+      <div class="doc-actions">
+        <a href="${esc(doc['File Path']||'#')}" target="_blank" class="btn-doc">⬇ Download</a>
+        <button class="btn-doc btn-doc-del" onclick="deleteDoc('${esc(doc.ID)}')">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteDoc(id){
+  if(!confirm('Delete this document?')) return;
+  await fetch('/api/documents/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
+  loadDocs();
+}
+
+// ── ADMIN CENTER ───────────────────────────────────────────
+async function loadAdminRequests(){
+  const res=await fetch('/api/reuse/requests');
+  const d=await res.json();
+  allRequests=d.requests;
+  document.getElementById('cnt-pending').textContent=allRequests.filter(r=>r.status==='pending').length;
+  document.getElementById('cnt-approved').textContent=allRequests.filter(r=>r.status==='approved').length;
+  document.getElementById('cnt-rejected').textContent=allRequests.filter(r=>r.status==='rejected').length;
+  renderAdminTable();
+}
+
+function renderAdminTable(){
+  const filtered=activeReqFilter==='all'?allRequests:allRequests.filter(r=>r.status===activeReqFilter);
+  const tbody=document.getElementById('admin-tbody');
+  if(!filtered.length){tbody.innerHTML='<tr><td colspan="8" style="padding:20px;color:var(--text-muted);text-align:center">No requests.</td></tr>';return;}
+  tbody.innerHTML=filtered.map(r=>`<tr>
+    <td class="col-id">#${r.id}</td>
+    <td class="col-name">${esc(r.content_name)}</td>
+    <td><strong style="font-size:12px">${esc(r.requester_name)}</strong></td>
+    <td><span class="badge badge-team">${esc(r.requester_team)}</span></td>
+    <td style="font-size:12px;color:var(--text-muted);max-width:160px">${esc(r.message||'—')}</td>
+    <td style="font-size:11px;color:var(--text-muted);white-space:nowrap">${r.created_at}</td>
+    <td><span class="badge badge-${r.status}">${r.status}</span></td>
+    <td>${r.status==='pending'?`<div style="display:flex;gap:4px"><button class="btn-sm btn-approve" onclick="updateReuse(${r.id},'approved')">✓</button><button class="btn-sm btn-reject" onclick="updateReuse(${r.id},'rejected')">✗</button></div>`:'—'}</td>
+  </tr>`).join('');
+}
+
+async function updateReuse(id,status){
+  await fetch('/api/reuse/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,status})});
+  await loadAdminRequests();
+}
+
+async function loadMyReuse(){
+  const res=await fetch('/api/reuse/my-requests');
+  const d=await res.json();
+  const wrap=document.getElementById('my-reuse-wrap');
+  if(!d.requests.length){wrap.innerHTML='<p style="font-size:13px;color:var(--text-muted)">No reuse requests yet.</p>';return;}
+  wrap.innerHTML=`<div style="overflow-x:auto"><table style="width:100%;min-width:400px;border-collapse:collapse;background:var(--white);border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+    <thead><tr class="header-row"><th><div class="th-inner"><span class="th-label">Content</span></div></th><th><div class="th-inner"><span class="th-label">Owner</span></div></th><th><div class="th-inner"><span class="th-label">Date</span></div></th><th><div class="th-inner"><span class="th-label">Status</span></div></th></tr></thead>
+    <tbody>${d.requests.map(r=>`<tr><td class="col-name">${esc(r.content_name)}</td><td><span class="badge badge-team">${esc(r.owner_team)}</span></td><td style="font-size:11px;color:var(--text-muted)">${r.created_at}</td><td><span class="badge badge-${r.status}">${r.status}</span></td></tr>`).join('')}</tbody>
+  </table></div>`;
+}
+
+document.querySelectorAll('[data-req]').forEach(chip=>{
+  chip.addEventListener('click',()=>{ activeReqFilter=chip.dataset.req; document.querySelectorAll('[data-req]').forEach(c=>c.classList.remove('active')); chip.classList.add('active'); renderAdminTable(); });
+});
+
+// ── REUSE MODAL ────────────────────────────────────────────
+function openReuse(row){reuseTarget=row;document.getElementById('reuse-desc').textContent=`"${row['English Name']}" (Owner: ${row['Owner Team']||'?'})`;document.getElementById('reuse-msg').value='';document.getElementById('reuse-modal').classList.add('open');}
+function closeReuse(){document.getElementById('reuse-modal').classList.remove('open');reuseTarget=null;}
+async function submitReuse(){
+  if(!reuseTarget)return;
+  await fetch('/api/reuse',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content_id:reuseTarget.ID||reuseTarget['English Name'],content_name:reuseTarget['English Name'],list_name:reuseTarget['List Name'],owner_team:reuseTarget['Owner Team'],message:document.getElementById('reuse-msg').value})});
+  closeReuse(); alert('✅ Reuse request sent!');
+}
+document.getElementById('reuse-modal').addEventListener('click',closeReuse);
+
+// ── ZONE TABS ──────────────────────────────────────────────
+function showZone(zone, btn){
+  document.querySelectorAll('.zone-content').forEach(z=>z.classList.remove('active'));
+  document.querySelectorAll('.zone-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('zone-'+zone).classList.add('active');
+  btn.classList.add('active');
+}
+
+
+
+
+initPage();
+</script>
+{% endblock %}

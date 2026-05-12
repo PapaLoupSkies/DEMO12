@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+{% block title %}Calendar — Knowledge Base{% endblock %}
+
+{% block extra_head %}
+<style>
+* { box-sizing: border-box; }
+.cal-page {
+  position: fixed; top: 58px; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; background: var(--bg);
+  overflow: hidden;
+}
+/* top bar */
+.cal-bar {
+  display: flex; align-items: center; gap: 8px; padding: 9px 20px;
+  border-bottom: 1px solid var(--border); background: var(--white);
+  flex-shrink: 0; flex-wrap: wrap;
+}
+.cal-bar button {
+  padding: 5px 14px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--white); font-family: 'Inter',sans-serif; font-size: 12px;
+  cursor: pointer; color: var(--text); transition: all .15s;
+}
+.cal-bar button:hover { border-color: var(--accent); color: var(--accent); }
+.btn-circ { width: 30px; height: 30px; padding: 0 !important; border-radius: 50% !important; font-size: 18px !important; }
+#m-lbl { font-size: 20px; font-weight: 700; color: var(--text); min-width: 210px; }
+.ev-q {
+  padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px;
+  font-family: 'Inter',sans-serif; font-size: 12px; width: 165px;
+  background: var(--bg); color: var(--text); outline: none;
+}
+.ev-q:focus { border-color: var(--accent); background: var(--white); }
+select.fsel {
+  padding: 5px 24px 5px 10px; border: 1px solid var(--border); border-radius: 20px;
+  font-family: 'Inter',sans-serif; font-size: 12px; color: var(--text);
+  background: var(--white); appearance: none; cursor: pointer; outline: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 7px center;
+}
+select.fsel:disabled { opacity: .4; cursor: default; }
+.arr { color: var(--text-muted); font-size: 13px; }
+.ev-cnt { font-size: 12px; color: var(--text-muted); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; background: var(--bg); }
+.btn-addx { background: var(--accent) !important; color: #fff !important; border-color: var(--accent) !important; font-weight: 600 !important; margin-left: auto; }
+.btn-addx:hover { background: #005548 !important; }
+
+/* weekday header */
+.wd-row {
+  display: grid; grid-template-columns: repeat(7,1fr);
+  flex-shrink: 0; background: var(--white);
+  border-bottom: 2px solid #ddd;
+}
+.wd { padding: 8px 10px; font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-muted); }
+
+/* grid */
+.grid-outer { flex: 1; overflow-y: auto; }
+.cal-grid { display: grid; grid-template-columns: repeat(7,1fr); }
+.cc {
+  border-right: 1px solid #e8e8e3; border-bottom: 1px solid #e8e8e3;
+  padding: 5px 6px; min-height: 115px; background: var(--white);
+  vertical-align: top;
+}
+.cc:nth-child(7n) { border-right: none; }
+.cc.om { background: #f9f9f7; }
+.cc.om .dn { color: #ccc; }
+.cc.td { background: #eef8f5; }
+.dn {
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  width: 28px; height: 28px; display: flex; align-items: center;
+  justify-content: center; border-radius: 50%; margin-bottom: 3px; flex-shrink: 0;
+}
+.cc.td .dn { background: var(--accent); color: #fff; }
+.ep {
+  display: block; padding: 3px 7px; border-radius: 4px; font-size: 11px;
+  font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; cursor: pointer; color: #fff; line-height: 1.45;
+  transition: opacity .1s;
+}
+.ep:hover { opacity: .82; }
+.ep-more { font-size: 10px; color: var(--text-muted); font-style: italic; cursor: pointer; padding: 1px 2px; }
+.ep-more:hover { color: var(--accent); }
+
+/* tooltip */
+.tt {
+  display: none; position: fixed; z-index: 9999; pointer-events: none;
+  background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.13); min-width: 230px; max-width: 290px; overflow: hidden;
+}
+.tt.on { display: block; }
+.tt-bar { height: 4px; }
+.tt-head { padding: 10px 14px 8px; border-bottom: 1px solid var(--border); }
+.tt-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.3; }
+.tt-body { padding: 8px 14px 12px; }
+.tt-row { display: flex; gap: 8px; margin-bottom: 4px; align-items: flex-start; }
+.tt-ic { font-size: 12px; width: 16px; flex-shrink: 0; }
+.tt-v { font-size: 12px; color: var(--text); line-height: 1.4; }
+
+/* modal */
+.mov { display:none; position:fixed; inset:0; background:rgba(0,0,0,.35); z-index:600; align-items:center; justify-content:center; }
+.mov.open { display:flex; }
+.mbox { background:var(--white); border-radius:14px; padding:24px 26px; width:420px; max-width:94vw; box-shadow:0 10px 40px rgba(0,0,0,.15); }
+.mbox h3 { font-size:16px; font-weight:700; margin-bottom:16px; }
+.fr { margin-bottom:12px; }
+.fr label { display:block; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:4px; }
+.fr input,.fr select,.fr textarea { width:100%; padding:8px 11px; border:1px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; outline:none; background:var(--bg); color:var(--text); }
+.fr input:focus,.fr select:focus,.fr textarea:focus { border-color:var(--accent); background:var(--white); }
+.fg { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.mfoot { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; padding-top:14px; border-top:1px solid var(--border); }
+.bp { padding:8px 18px; background:var(--accent); color:#fff; border:none; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+.bc { padding:8px 14px; background:none; border:1px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; color:var(--text-muted); cursor:pointer; }
+.bd { padding:8px 14px; background:none; border:1px solid #f5a0a0; border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; color:var(--red); cursor:pointer; margin-right:auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cal-page">
+  <div class="cal-bar">
+    <button class="btn-circ" onclick="nav(-1)">&#8249;</button>
+    <button class="btn-circ" onclick="nav(1)">&#8250;</button>
+    <button onclick="goT()">Today</button>
+    <span id="m-lbl"></span>
+    <div style="position:relative;display:inline-block" id="dd-ev-wrap">
+      <button class="fsel" id="dd-ev-btn" onclick="toggleEvDd()" style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 12px;border-radius:20px;font-size:12px;font-family:'Inter',sans-serif;border:1px solid var(--border);background:var(--white);color:var(--text-muted);">
+        Events <span id="dd-ev-cnt" style="display:none;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700"></span> &#9662;
+      </button>
+      <div id="dd-ev-panel" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:400;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.12);width:260px;overflow:hidden;">
+        <input id="dd-ev-search" placeholder="&#128269; Search..." oninput="filterEvDd()" style="width:100%;padding:8px 12px;border:none;border-bottom:1px solid var(--border);font-family:'Inter',sans-serif;font-size:12px;outline:none;background:var(--bg);color:var(--text);">
+        <div style="padding:4px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+          <label style="font-size:11px;color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:5px;font-style:italic">
+            <input type="checkbox" id="dd-ev-all" onchange="toggleAllEvs(this)" style="accent-color:var(--accent)"> Select all
+          </label>
+        </div>
+        <div id="dd-ev-list" style="max-height:220px;overflow-y:auto;"></div>
+        <div style="padding:6px 10px;border-top:1px solid var(--border);text-align:right;">
+          <button onclick="clearEvFilter()" style="padding:3px 10px;border-radius:5px;border:1px solid var(--border);background:none;font-family:'Inter',sans-serif;font-size:11px;color:var(--text-muted);cursor:pointer;">Clear</button>
+        </div>
+      </div>
+    </div>
+    <select class="fsel" id="sp" onchange="onPole()"><option value="">All Department</option></select>
+    <span class="arr">›</span>
+    <select class="fsel" id="sd" onchange="onDept()" disabled><option value="">All Sub Departments</option></select>
+    <span class="arr">›</span>
+    <select class="fsel" id="st" onchange="render()" disabled><option value="">All Teams</option></select>
+    <span class="ev-cnt" id="ec">0 events</span>
+    {% if user.access_group in ['Editor','Super Admin'] %}
+    <button class="btn-addx" onclick="openM(null)">+ Add Event</button>
+    {% endif %}
+  </div>
+
+  <div class="wd-row">
+    <div class="wd">Sunday</div><div class="wd">Monday</div><div class="wd">Tuesday</div>
+    <div class="wd">Wednesday</div><div class="wd">Thursday</div><div class="wd">Friday</div>
+    <div class="wd">Saturday</div>
+  </div>
+
+  <div class="grid-outer">
+    <div class="cal-grid" id="cg"></div>
+  </div>
+</div>
+
+<div class="tt" id="tt">
+  <div class="tt-bar" id="ttb"></div>
+  <div class="tt-head"><div class="tt-title" id="ttt"></div></div>
+  <div class="tt-body" id="ttbd"></div>
+</div>
+
+{% if user.access_group in ['Editor','Super Admin'] %}
+<div class="mov" id="mov">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <h3 id="mh">Add Event</h3>
+    <input type="hidden" id="mid">
+    <div class="fr"><label>Title *</label><input type="text" id="mtitle"></div>
+    <div class="fg">
+      <div class="fr"><label>Start Date *</label><input type="date" id="mstart"></div>
+      <div class="fr"><label>End Date</label><input type="date" id="mend"></div>
+    </div>
+    <div class="fg">
+      <div class="fr"><label>Department</label><select id="mdept"></select></div>
+      <div class="fr"><label>Team</label><select id="mteam"></select></div>
+    </div>
+    <div class="fr"><label>Location</label><input type="text" id="mloc"></div>
+    <div class="fr"><label>Description</label><textarea id="mdesc" rows="3"></textarea></div>
+    <div class="mfoot">
+      <button class="bd" id="bdel" style="display:none" onclick="delEv()">Delete</button>
+      <button class="bc" onclick="closeM()">Cancel</button>
+      <button class="bp" onclick="saveEv()">Save</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Data injectée directement depuis Flask ──────────────────
+const INIT_EVENTS = {{ events_json | safe }};
+
+const IS_ED = {{ 'true' if user.access_group in ['Editor','Super Admin'] else 'false' }};
+const MNS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const fmt = d => { if(!d)return ''; const[y,m,day]=d.split('-'); return MNS[parseInt(m)-1]+' '+parseInt(day)+', '+y; };
+
+const TODAY = new Date(); TODAY.setHours(0,0,0,0);
+let Y=TODAY.getFullYear(), M=TODAY.getMonth();
+let evs=[...INIT_EVENTS], tax={}, selectedEvs=new Set();
+
+const PAL=['#006B5E','#4A3F8F','#B07D2A','#2C4FA3','#C0392B','#1a7a3a','#7a1a6a','#1a507a'];
+const CM={}; let CI=0;
+const col=t=>{ if(CM[t]===undefined)CM[t]=CI++%PAL.length; return PAL[CM[t]]; };
+
+function buildEvDd() {
+  const list = document.getElementById('dd-ev-list');
+  list.innerHTML = '';
+  evs.forEach(e => {
+    const item = document.createElement('div');
+    item.className = 'dd-ev-item';
+    item.dataset.title = (e.title||'').toLowerCase();
+    item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:0.5px solid var(--border);cursor:pointer;';
+    item.innerHTML = `
+      <input type="checkbox" value="${e.id}" style="accent-color:var(--accent);width:13px;height:13px;flex-shrink:0" ${selectedEvs.has(e.id)?'checked':''}>
+      <span style="flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.title||'')}</span>
+      <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;margin-left:4px">${esc((e.date||'').slice(5))}</span>`;
+    item.querySelector('input').addEventListener('change', () => applyEvFilter());
+    item.addEventListener('click', ev => { if(ev.target.tagName!=='INPUT'){ const cb=item.querySelector('input'); cb.checked=!cb.checked; applyEvFilter(); }});
+    list.appendChild(item);
+  });
+}
+
+function filterEvDd() {
+  const q = (document.getElementById('dd-ev-search').value||'').toLowerCase();
+  document.querySelectorAll('.dd-ev-item').forEach(el => {
+    el.style.display = el.dataset.title.includes(q) ? '' : 'none';
+  });
+}
+
+function applyEvFilter() {
+  selectedEvs.clear();
+  document.querySelectorAll('#dd-ev-list input:checked').forEach(cb => selectedEvs.add(cb.value));
+  const cnt = document.getElementById('dd-ev-cnt');
+  if (selectedEvs.size > 0) { cnt.textContent = selectedEvs.size; cnt.style.display = ''; document.getElementById('dd-ev-btn').style.borderColor = 'var(--accent)'; document.getElementById('dd-ev-btn').style.color = 'var(--accent)'; }
+  else { cnt.style.display = 'none'; document.getElementById('dd-ev-btn').style.borderColor = ''; document.getElementById('dd-ev-btn').style.color = ''; }
+  render();
+}
+
+function toggleAllEvs(cb) {
+  document.querySelectorAll('#dd-ev-list .dd-ev-item input').forEach(c => c.checked = cb.checked);
+  applyEvFilter();
+}
+
+function clearEvFilter() {
+  selectedEvs.clear();
+  document.querySelectorAll('#dd-ev-list input').forEach(c => c.checked = false);
+  document.getElementById('dd-ev-all').checked = false;
+  document.getElementById('dd-ev-cnt').style.display = 'none';
+  document.getElementById('dd-ev-btn').style.borderColor = '';
+  document.getElementById('dd-ev-btn').style.color = '';
+  render();
+}
+
+function toggleEvDd() {
+  const panel = document.getElementById('dd-ev-panel');
+  const isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) { document.getElementById('dd-ev-search').value = ''; filterEvDd(); document.getElementById('dd-ev-search').focus(); }
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('#dd-ev-wrap')) document.getElementById('dd-ev-panel').style.display = 'none';
+});
+
+async function init() {
+  // Charger taxonomy pour les filtres cascade
+  try {
+    const tj = await fetch('/api/taxonomy');
+    const taxj = await tj.json();
+    tax = taxj.taxonomy || {};
+    const sp = document.getElementById('sp');
+    Object.keys(tax).sort().forEach(p => sp.innerHTML += `<option value="${esc(p)}">${esc(p)}</option>`);
+    if (IS_ED) {
+      const ad=[...new Set(Object.values(tax).flatMap(s=>Object.keys(s)))].sort();
+      const at=[...new Set(Object.values(tax).flatMap(s=>Object.values(s).flat()))].sort();
+      document.getElementById('mdept').innerHTML='<option value="">—</option>'+ad.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');
+      document.getElementById('mteam').innerHTML='<option value="">—</option>'+at.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    }
+  } catch(e) { console.warn('Taxonomy load failed:', e); }
+  render();
+}
+
+function onPole() {
+  const p=document.getElementById('sp').value;
+  const ds=document.getElementById('sd'), ts=document.getElementById('st');
+  ds.innerHTML='<option value="">All Departments</option>';
+  ts.innerHTML='<option value="">All Teams</option>'; ts.disabled=true;
+  if(p&&tax[p]){ Object.keys(tax[p]).sort().forEach(d=>ds.innerHTML+=`<option value="${esc(d)}">${esc(d)}</option>`); ds.disabled=false; }
+  else ds.disabled=true;
+  render();
+}
+function onDept() {
+  const p=document.getElementById('sp').value, d=document.getElementById('sd').value;
+  const ts=document.getElementById('st');
+  ts.innerHTML='<option value="">All Teams</option>';
+  if(p&&d&&tax[p]&&tax[p][d]){ tax[p][d].sort().forEach(t=>ts.innerHTML+=`<option value="${esc(t)}">${esc(t)}</option>`); ts.disabled=false; }
+  else ts.disabled=true;
+  render();
+}
+
+function filtered() {
+  const p=document.getElementById('sp').value;
+  const d=document.getElementById('sd').value;
+  const t=document.getElementById('st').value;
+  return evs.filter(e=>{
+    if(t&&e.team!==t)return false;
+    if(d&&e.department!==d)return false;
+    if(p){ const pts=Object.values(tax[p]||{}).flat(); if(!pts.includes(e.team))return false; }
+    if(selectedEvs.size>0&&!selectedEvs.has(e.id))return false;
+    return true;
+  });
+}
+
+function render() {
+  const list=filtered();
+  document.getElementById('ec').textContent=`${list.length} event${list.length!==1?'s':''}`;
+  document.getElementById('m-lbl').textContent=`${MNS[M]} ${Y}`;
+
+  const by={};
+  list.forEach(e=>{ const d=(e.date||'').split('T')[0]; if(!d)return; if(!by[d])by[d]=[]; by[d].push(e); });
+
+  const first=new Date(Y,M,1), last=new Date(Y,M+1,0);
+  const sdow=first.getDay();
+  const total=Math.ceil((sdow+last.getDate())/7)*7;
+  const g=document.getElementById('cg'); g.innerHTML='';
+
+  for(let i=0;i<total;i++){
+    const off=i-sdow+1;
+    const dt=new Date(Y,M,off);
+    const ds=dt.toISOString().split('T')[0];
+    const isO=dt.getMonth()!==M, isT=dt.getTime()===TODAY.getTime();
+
+    const cell=document.createElement('div');
+    cell.className='cc'+(isO?' om':'')+(isT?' td':'');
+
+    const num=document.createElement('div');
+    num.className='dn'; num.textContent=dt.getDate(); cell.appendChild(num);
+
+    (by[ds]||[]).forEach(e=>{
+      const pill=document.createElement('div');
+      pill.className='ep'; pill.style.background=col(e.team||'');
+      pill.textContent=e.title||'';
+      pill.addEventListener('mouseenter',ev=>showTT(ev,e));
+      pill.addEventListener('mousemove', ev=>moveTT(ev));
+      pill.addEventListener('mouseleave',hideTT);
+      if(IS_ED) pill.addEventListener('dblclick',()=>openM(e));
+      cell.appendChild(pill);
+    });
+
+    if(IS_ED){
+      cell.addEventListener('click',ev=>{ if(ev.target===cell||ev.target===num) openM(null,ds); });
+    }
+    g.appendChild(cell);
+  }
+}
+
+function nav(d){ M+=d; if(M>11){M=0;Y++;} if(M<0){M=11;Y--;} render(); }
+function goT(){ Y=TODAY.getFullYear(); M=TODAY.getMonth(); render(); }
+
+// Tooltip
+const tt=document.getElementById('tt');
+function showTT(ev,e){
+  document.getElementById('ttt').textContent=e.title||'';
+  document.getElementById('ttb').style.background=col(e.team||'');
+  const f=[
+    ['📅',fmt((e.date||'').split('T')[0])+(e.end_date&&e.end_date!==e.date?' → '+fmt(e.end_date):'')],
+    ['📍',e.location],['👥',e.team],['🏢',e.department],['📝',e.description],
+  ].filter(([,v])=>v);
+  document.getElementById('ttbd').innerHTML=f.map(([ic,v])=>`<div class="tt-row"><span class="tt-ic">${ic}</span><span class="tt-v">${esc(String(v))}</span></div>`).join('');
+  tt.classList.add('on'); pos(ev);
+}
+function moveTT(ev){pos(ev);}
+function pos(ev){
+  const m=14,tw=tt.offsetWidth||250,th=tt.offsetHeight||130;
+  let x=ev.clientX+m,y=ev.clientY+m;
+  if(x+tw>window.innerWidth-8)x=ev.clientX-tw-m;
+  if(y+th>window.innerHeight-8)y=ev.clientY-th-m;
+  tt.style.left=x+'px'; tt.style.top=y+'px';
+}
+function hideTT(){tt.classList.remove('on');}
+
+// Modal
+{% if user.access_group in ['Editor','Super Admin'] %}
+function openM(e,pf){
+  document.getElementById('mov').classList.add('open');
+  document.getElementById('mh').textContent=e?'Edit Event':'Add Event';
+  document.getElementById('bdel').style.display=e?'':'none';
+  document.getElementById('mid').value=e?(e.id||''):'';
+  document.getElementById('mtitle').value=e?(e.title||''):'';
+  document.getElementById('mstart').value=e?(e.date||'').split('T')[0]:(pf||'');
+  document.getElementById('mend').value=e?(e.end_date||'').split('T')[0]:'';
+  document.getElementById('mdept').value=e?(e.department||''):'';
+  document.getElementById('mteam').value=e?(e.team||''):'';
+  document.getElementById('mloc').value=e?(e.location||''):'';
+  document.getElementById('mdesc').value=e?(e.description||''):'';
+}
+function closeM(){document.getElementById('mov').classList.remove('open');}
+document.getElementById('mov').addEventListener('click',function(ev){if(ev.target===this)closeM();});
+
+async function saveEv(){
+  const title=document.getElementById('mtitle').value.trim();
+  const start=document.getElementById('mstart').value;
+  if(!title||!start){alert('Title and Start Date required.');return;}
+  const id=document.getElementById('mid').value;
+  const p={title,start_date:start,end_date:document.getElementById('mend').value,
+    department:document.getElementById('mdept').value,team:document.getElementById('mteam').value,
+    location:document.getElementById('mloc').value,description:document.getElementById('mdesc').value};
+  await fetch(id?`/api/events/${id}`:'/api/events',{method:id?'PUT':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});
+  const r=await(await fetch('/api/events')).json();
+  evs=r.events||[];
+  closeM(); render();
+}
+async function delEv(){
+  const id=document.getElementById('mid').value;
+  if(!id||!confirm('Delete?'))return;
+  await fetch(`/api/events/${id}`,{method:'DELETE'});
+  const r=await(await fetch('/api/events')).json();
+  evs=r.events||[];
+  closeM(); render();
+}
+{% endif %}
+
+buildEvDd();
+init();
+</script>
+{% endblock %}

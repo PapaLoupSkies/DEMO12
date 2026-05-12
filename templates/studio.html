@@ -1,0 +1,478 @@
+{% extends "base.html" %}
+{% block title %}Content Studio — Knowledge Base{% endblock %}
+
+{% block extra_head %}
+<style>
+.studio-layout { display:grid; grid-template-columns:300px 1fr; height:calc(100vh - 58px); overflow:hidden; }
+
+/* ── Sidebar ── */
+.studio-sidebar { border-right:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; background:var(--white); }
+.sb-header { padding:12px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.sb-title { font-size:13px; font-weight:700; color:var(--text); }
+.btn-new { padding:6px 12px; background:var(--accent); color:#fff; border:none; border-radius:7px; font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; }
+.btn-new:hover { background:#005548; }
+.sb-filters { padding:8px 12px; border-bottom:1px solid var(--border); display:flex; gap:6px; flex-wrap:wrap; flex-shrink:0; }
+.sf-chip { padding:3px 8px; border-radius:20px; font-size:11px; border:1px solid var(--border); cursor:pointer; background:var(--bg); color:var(--text-muted); transition:all .15s; }
+.sf-chip.active { background:var(--accent-light); color:var(--accent); border-color:var(--accent); font-weight:600; }
+.sb-list { overflow-y:auto; flex:1; }
+.sb-item { padding:10px 14px; border-bottom:0.5px solid var(--border-light); cursor:pointer; transition:background .1s; }
+.sb-item:hover { background:#f5faf9; }
+.sb-item.active { background:var(--accent-light); border-left:3px solid var(--accent); }
+.si-title { font-size:12px; font-weight:600; color:var(--text); margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.si-meta { font-size:10px; color:var(--text-muted); display:flex; align-items:center; gap:6px; }
+
+/* Status badges */
+.st { display:inline-block; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:600; }
+.st-draft { background:#f5f5f0; color:#888; }
+.st-pending-editor { background:#FDF3E0; color:#B07D2A; }
+.st-pending-admin  { background:#E8EEF8; color:#2C4FA3; }
+.st-published      { background:#E6F2F0; color:#006B5E; }
+
+/* ── Main editor ── */
+.studio-main { display:flex; flex-direction:column; overflow:hidden; background:var(--bg); }
+.editor-header { padding:12px 20px; background:var(--white); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap; }
+.editor-title-input { flex:1; min-width:200px; font-size:16px; font-weight:700; border:none; outline:none; background:transparent; color:var(--text); font-family:'Libre Baskerville',serif; }
+.editor-title-input::placeholder { color:var(--text-light); }
+.eh-meta { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.eh-sel { padding:5px 20px 5px 9px; border:1px solid var(--border); border-radius:6px; font-family:'Inter',sans-serif; font-size:11px; background:var(--bg); color:var(--text); appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 5px center; cursor:pointer; outline:none; }
+
+/* Toolbar */
+.editor-toolbar { padding:6px 20px; background:var(--white); border-bottom:1px solid var(--border); display:flex; gap:3px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+.tb-btn { width:28px; height:28px; border:none; background:none; border-radius:5px; cursor:pointer; font-size:13px; color:var(--text-muted); display:flex; align-items:center; justify-content:center; }
+.tb-btn:hover { background:var(--bg); color:var(--accent); }
+.tb-btn.active { background:var(--accent-light); color:var(--accent); }
+.tb-sep { width:1px; height:20px; background:var(--border); margin:0 4px; }
+.tb-label { font-size:11px; font-weight:600; color:var(--text-muted); padding:0 4px; }
+
+/* Editor body */
+.editor-body { flex:1; overflow-y:auto; padding:24px 40px; }
+.editor-content { max-width:720px; margin:0 auto; }
+.rich-editor { min-height:300px; outline:none; font-size:14px; line-height:1.7; color:var(--text); }
+.rich-editor h1 { font-family:'Libre Baskerville',serif; font-size:22px; color:var(--accent); margin:16px 0 8px; }
+.rich-editor h2 { font-family:'Libre Baskerville',serif; font-size:17px; color:var(--text); margin:14px 0 6px; }
+.rich-editor p { margin:0 0 10px; }
+.rich-editor ul, .rich-editor ol { margin:0 0 10px; padding-left:24px; }
+.rich-editor img { max-width:100%; border-radius:8px; margin:8px 0; }
+.rich-editor a { color:var(--accent); }
+.rich-editor blockquote { border-left:3px solid var(--accent); padding-left:14px; color:var(--text-muted); margin:10px 0; font-style:italic; }
+[contenteditable]:empty:before { content:attr(data-placeholder); color:var(--text-light); pointer-events:none; }
+
+/* Channels */
+.channels-bar { padding:10px 20px; background:var(--white); border-top:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap; }
+.ch-label { font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; letter-spacing:.07em; }
+.ch-chip { padding:3px 9px; border-radius:20px; font-size:11px; border:1px solid var(--border); cursor:pointer; background:var(--bg); color:var(--text-muted); transition:all .15s; display:flex; align-items:center; gap:4px; }
+.ch-chip.on { border-color:var(--accent); background:var(--accent-light); color:var(--accent); font-weight:500; }
+.ch-icon { font-size:12px; }
+
+/* Action bar */
+.action-bar { padding:10px 20px; background:var(--white); border-top:1px solid var(--border); display:flex; align-items:center; gap:8px; flex-shrink:0; flex-wrap:wrap; }
+.btn-action { padding:7px 16px; border-radius:7px; font-family:'Inter',sans-serif; font-size:12px; font-weight:600; cursor:pointer; border:none; transition:all .15s; }
+.btn-save   { background:var(--bg); color:var(--text-muted); border:1px solid var(--border); }
+.btn-submit { background:#FDF3E0; color:#B07D2A; border:1px solid #E8C880; }
+.btn-validate-e { background:#E8EEF8; color:#2C4FA3; border:1px solid #B3C5E8; }
+.btn-validate-a { background:var(--accent); color:#fff; }
+.btn-reject  { background:var(--bg); color:var(--red); border:1px solid var(--red); }
+.btn-export  { background:var(--bg); color:var(--text-muted); border:1px solid var(--border); }
+.btn-action:hover { opacity:.85; }
+.ab-status { font-size:12px; color:var(--text-muted); margin-left:auto; }
+.ab-author { font-size:11px; color:var(--text-muted); }
+
+/* Comment modal */
+.cmt-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.3); z-index:500; align-items:center; justify-content:center; }
+.cmt-overlay.open { display:flex; }
+.cmt-box { background:var(--white); border-radius:12px; padding:22px 24px; width:380px; max-width:94vw; box-shadow:0 8px 28px rgba(0,0,0,.14); }
+.cmt-box h3 { font-size:15px; font-weight:700; margin-bottom:12px; }
+.cmt-box textarea { width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:13px; resize:none; outline:none; }
+.cmt-box textarea:focus { border-color:var(--accent); }
+.cmt-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:12px; }
+.btn-p { padding:7px 16px; background:var(--accent); color:#fff; border:none; border-radius:7px; font-family:'Inter',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
+.btn-c { padding:7px 14px; background:none; border:1px solid var(--border); border-radius:7px; font-family:'Inter',sans-serif; font-size:13px; color:var(--text-muted); cursor:pointer; }
+
+/* Empty state */
+.empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:var(--text-muted); gap:12px; padding:40px; }
+.empty-icon { font-size:48px; opacity:.3; }
+.empty-text { font-size:14px; text-align:center; }
+
+/* Workflow timeline */
+.workflow-bar { padding:8px 20px; background:#f8f8f5; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:0; flex-shrink:0; }
+.wf-step { display:flex; align-items:center; gap:6px; }
+.wf-dot { width:22px; height:22px; border-radius:50%; border:2px solid var(--border); background:var(--white); display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+.wf-dot.done { background:var(--accent); border-color:var(--accent); color:#fff; }
+.wf-dot.current { background:var(--white); border-color:var(--accent); color:var(--accent); }
+.wf-label { font-size:11px; color:var(--text-muted); white-space:nowrap; }
+.wf-label.done { color:var(--accent); font-weight:500; }
+.wf-label.current { color:var(--accent); font-weight:600; }
+.wf-line { flex:1; height:1px; background:var(--border); min-width:16px; max-width:40px; }
+.wf-line.done { background:var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="studio-layout">
+
+  <!-- Sidebar -->
+  <div class="studio-sidebar">
+    <div class="sb-header">
+      <span class="sb-title">📝 Content Studio</span>
+      {% if user.access_group in ['Editor','Super Admin'] %}
+      <button class="btn-new" onclick="newContent()">+ New</button>
+      {% endif %}
+    </div>
+    <div class="sb-filters" id="sb-filters">
+      <span class="sf-chip active" data-status="" onclick="filterStatus(this,'')">All</span>
+      <span class="sf-chip" data-status="Draft" onclick="filterStatus(this,'Draft')">Draft</span>
+      <span class="sf-chip" data-status="Pending Editor" onclick="filterStatus(this,'Pending Editor')">📋 Editor</span>
+      <span class="sf-chip" data-status="Pending Admin" onclick="filterStatus(this,'Pending Admin')">🔐 Admin</span>
+      <span class="sf-chip" data-status="Published" onclick="filterStatus(this,'Published')">✅ Published</span>
+    </div>
+    <div class="sb-list" id="sb-list">
+      <div class="empty-state" style="height:200px"><div class="empty-icon">📄</div><div class="empty-text">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Editor area -->
+  <div class="studio-main" id="studio-main">
+    <div class="empty-state">
+      <div class="empty-icon">✍️</div>
+      <div class="empty-text">Select a content to edit<br>or click <strong>+ New</strong> to create one</div>
+    </div>
+  </div>
+</div>
+
+<!-- Comment modal -->
+<div class="cmt-overlay" id="cmt-overlay">
+  <div class="cmt-box" onclick="event.stopPropagation()">
+    <h3 id="cmt-title">Add a comment</h3>
+    <textarea id="cmt-text" rows="4" placeholder="Optional comment..."></textarea>
+    <div class="cmt-actions">
+      <button class="btn-c" onclick="closeCmt()">Cancel</button>
+      <button class="btn-p" id="cmt-confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IS_ADMIN = {{ 'true' if user.access_group == 'Super Admin' else 'false' }};
+const IS_EDITOR = {{ 'true' if user.access_group in ['Editor','Super Admin'] else 'false' }};
+const MY_USER = '{{ user.username }}';
+const MY_TEAM = '{{ user.team }}';
+
+const CHANNELS = [
+  {id:'Intranet',           icon:'🏢', label:'Intranet'},
+  {id:'Corporate Site France', icon:'🇫🇷', label:'Corp. France'},
+  {id:'Corporate Site Brazil', icon:'🇧🇷', label:'Corp. Brazil'},
+  {id:'Corporate Site USA',    icon:'🇺🇸', label:'Corp. USA'},
+  {id:'Corporate Site CIB',    icon:'🌐', label:'Corp. CIB'},
+  {id:'SharePoint',         icon:'📁', label:'SharePoint'},
+  {id:'Mass Mailing',       icon:'📧', label:'Mass Mailing'},
+  {id:'LinkedIn',           icon:'💼', label:'LinkedIn'},
+  {id:'Twitter/X',          icon:'🐦', label:'Twitter/X'},
+];
+const CATS = ['CP','Actualite','Procedure','Position Paper','Document','Article','KPI','Business Glossary','Activity Communication'];
+const ST_CLASS = {'Draft':'st-draft','Pending Editor':'st-pending-editor','Pending Admin':'st-pending-admin','Published':'st-published'};
+
+let allItems = [], currentId = null, statusFilter = '';
+
+async function load() {
+  const res = await fetch('/api/studio');
+  const d = await res.json();
+  allItems = d.items || [];
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('sb-list');
+  const items = statusFilter ? allItems.filter(i=>i.Status===statusFilter) : allItems;
+  if (!items.length) {
+    list.innerHTML = '<div class="empty-state" style="height:200px"><div class="empty-icon">📄</div><div class="empty-text">No content</div></div>';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="sb-item ${item['Content ID']===currentId?'active':''}" onclick="openItem('${item['Content ID']}')">
+      <div class="si-title">${esc(item.Title||'Untitled')}</div>
+      <div class="si-meta">
+        <span class="st ${ST_CLASS[item.Status]||'st-draft'}">${item.Status||'Draft'}</span>
+        <span>${esc(item['Author Team']||'')}</span>
+        <span>${esc(item['Updated At']||'')}</span>
+      </div>
+    </div>`).join('');
+}
+
+function filterStatus(el, status) {
+  document.querySelectorAll('.sf-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  statusFilter = status;
+  renderList();
+}
+
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function openItem(id) {
+  currentId = id;
+  renderList();
+  const item = allItems.find(i=>i['Content ID']===id);
+  if (!item) return;
+  renderEditor(item);
+}
+
+function renderEditor(item) {
+  const main = document.getElementById('studio-main');
+  const status = item.Status || 'Draft';
+  const canEdit = IS_EDITOR && (item.Author === MY_USER || IS_ADMIN) && status === 'Draft';
+  const canValidateEditor = IS_EDITOR && status === 'Pending Editor';
+  const canValidateAdmin = IS_ADMIN && status === 'Pending Admin';
+  const channels = (item.Channels||'').split(';').filter(Boolean);
+
+  // Workflow bar
+  const steps = ['Draft','Pending Editor','Pending Admin','Published'];
+  const si = steps.indexOf(status);
+  const wfBar = steps.map((s,i)=>{
+    const cls = i<si?'done':i===si?'current':'';
+    const labels = {'Draft':'Draft','Pending Editor':'Editor Review','Pending Admin':'Admin Review','Published':'Published'};
+    return (i>0?`<div class="wf-line ${i<=si?'done':''}"></div>`:'') +
+      `<div class="wf-step"><div class="wf-dot ${cls}">${i<si?'✓':i+1}</div><span class="wf-label ${cls}">${labels[s]}</span></div>`;
+  }).join('');
+
+  // Channels chips
+  const chipsHtml = CHANNELS.map(ch=>`
+    <span class="ch-chip ${channels.includes(ch.id)?'on':''}" data-ch="${ch.id}" onclick="${canEdit||IS_ADMIN?'toggleCh(this)':''}">
+      <span class="ch-icon">${ch.icon}</span>${ch.label}
+    </span>`).join('');
+
+  // Action buttons
+  let actions = '';
+  if (canEdit) {
+    actions += `<button class="btn-action btn-save" onclick="saveContent()">💾 Save</button>`;
+    actions += `<button class="btn-action btn-submit" onclick="submitContent()">📤 Submit for review</button>`;
+  }
+  if (canValidateEditor) {
+    actions += `<button class="btn-action btn-validate-e" onclick="openCmt('validate_editor')">✅ Validate (Editor)</button>`;
+    actions += `<button class="btn-action btn-reject" onclick="openCmt('reject')">↩ Return to author</button>`;
+  }
+  if (canValidateAdmin) {
+    actions += `<button class="btn-action btn-validate-a" onclick="openCmt('validate_admin')">🚀 Publish</button>`;
+    actions += `<button class="btn-action btn-reject" onclick="openCmt('reject')">↩ Return</button>`;
+  }
+  if (status === 'Published') {
+    actions += `<button class="btn-action btn-export" onclick="exportPDF('${item['Content ID']}')">📄 Export PDF</button>`;
+    actions += `<button class="btn-action btn-export" onclick="exportLinkedIn('${item['Content ID']}')">💼 LinkedIn</button>`;
+    actions += `<button class="btn-action btn-export" onclick="exportTwitter('${item['Content ID']}')">🐦 Twitter/X</button>`;
+  }
+  actions += `<span class="ab-status"><span class="st ${ST_CLASS[status]||'st-draft'}">${status}</span></span>`;
+  if (item['Editor Comment']) actions += `<span class="ab-author" title="${esc(item['Editor Comment'])}">💬 Editor: ${esc(item['Editor Comment'].slice(0,30))}${item['Editor Comment'].length>30?'...':''}</span>`;
+
+  // Category select
+  const catOpts = CATS.map(c=>`<option ${c===item['Content Category']?'selected':''}>${c}</option>`).join('');
+  const subOpts = CATS.map(c=>`<option ${c===item['Content Sub Category']?'selected':''}>${c}</option>`).join('');
+
+  main.innerHTML = `
+    <div class="editor-header">
+      <input class="editor-title-input" id="ed-title" value="${esc(item.Title||'')}" placeholder="Untitled content..." ${canEdit?'':'readonly'}>
+      <div class="eh-meta">
+        <select class="eh-sel" id="ed-cat" ${canEdit?'':'disabled'}><option value="">Category...</option>${catOpts}</select>
+        <select class="eh-sel" id="ed-subcat" ${canEdit?'':'disabled'}><option value="">Sub category...</option>${subOpts}</select>
+        <span style="font-size:11px;color:var(--text-muted)">By ${esc(item.Author||'')} · ${esc(item['Author Team']||'')}</span>
+      </div>
+    </div>
+    <div class="workflow-bar">${wfBar}</div>
+    ${canEdit?`<div class="editor-toolbar">
+      <span class="tb-label">Format</span>
+      <button class="tb-btn" title="H1" onclick="fmt('h1')"><b>H1</b></button>
+      <button class="tb-btn" title="H2" onclick="fmt('h2')"><b>H2</b></button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" title="Bold" onclick="fmt('bold')"><b>B</b></button>
+      <button class="tb-btn" title="Italic" onclick="fmt('italic')"><i>I</i></button>
+      <button class="tb-btn" title="Underline" onclick="fmt('underline')"><u>U</u></button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" title="Bullet list" onclick="fmt('ul')">≡</button>
+      <button class="tb-btn" title="Ordered list" onclick="fmt('ol')">1.</button>
+      <button class="tb-btn" title="Quote" onclick="fmt('quote')">"</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" title="Link" onclick="addLink()">🔗</button>
+      <button class="tb-btn" title="Image" onclick="addImage()">🖼</button>
+      <button class="tb-btn" title="Clear format" onclick="fmt('removeFormat')">✕</button>
+    </div>`:''}
+    <div class="editor-body">
+      <div class="editor-content">
+        <div class="rich-editor" id="ed-body" ${canEdit?'contenteditable="true"':''} data-placeholder="Start writing your content...">${item.Body||''}</div>
+      </div>
+    </div>
+    <div class="channels-bar">
+      <span class="ch-label">Channels:</span>
+      ${chipsHtml}
+    </div>
+    <div class="action-bar">${actions}</div>`;
+}
+
+// ── Toolbar ──────────────────────────────────────────────────
+function fmt(cmd) {
+  const ed = document.getElementById('ed-body');
+  if (!ed) return;
+  ed.focus();
+  if (cmd === 'h1') { document.execCommand('formatBlock', false, 'h1'); }
+  else if (cmd === 'h2') { document.execCommand('formatBlock', false, 'h2'); }
+  else if (cmd === 'ul') { document.execCommand('insertUnorderedList'); }
+  else if (cmd === 'ol') { document.execCommand('insertOrderedList'); }
+  else if (cmd === 'quote') { document.execCommand('formatBlock', false, 'blockquote'); }
+  else { document.execCommand(cmd); }
+}
+
+function addLink() {
+  const url = prompt('URL:');
+  if (url) { document.getElementById('ed-body').focus(); document.execCommand('createLink', false, url); }
+}
+
+function addImage() {
+  const url = prompt('Image URL:');
+  if (url) { document.getElementById('ed-body').focus(); document.execCommand('insertImage', false, url); }
+}
+
+function toggleCh(el) {
+  el.classList.toggle('on');
+}
+
+function getChannels() {
+  return [...document.querySelectorAll('.ch-chip.on')].map(c=>c.dataset.ch).join(';');
+}
+
+// ── CRUD ──────────────────────────────────────────────────────
+function newContent() {
+  currentId = null;
+  const main = document.getElementById('studio-main');
+  const catOpts = CATS.map(c=>`<option>${c}</option>`).join('');
+  const chipsHtml = CHANNELS.map(ch=>`
+    <span class="ch-chip" data-ch="${ch.id}" onclick="toggleCh(this)">
+      <span class="ch-icon">${ch.icon}</span>${ch.label}
+    </span>`).join('');
+  main.innerHTML = `
+    <div class="editor-header">
+      <input class="editor-title-input" id="ed-title" placeholder="Untitled content...">
+      <div class="eh-meta">
+        <select class="eh-sel" id="ed-cat"><option value="">Category...</option>${catOpts}</select>
+        <select class="eh-sel" id="ed-subcat"><option value="">Sub category...</option>${catOpts}</select>
+      </div>
+    </div>
+    <div class="editor-toolbar">
+      <span class="tb-label">Format</span>
+      <button class="tb-btn" onclick="fmt('h1')"><b>H1</b></button>
+      <button class="tb-btn" onclick="fmt('h2')"><b>H2</b></button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="fmt('bold')"><b>B</b></button>
+      <button class="tb-btn" onclick="fmt('italic')"><i>I</i></button>
+      <button class="tb-btn" onclick="fmt('underline')"><u>U</u></button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="fmt('ul')">≡</button>
+      <button class="tb-btn" onclick="fmt('ol')">1.</button>
+      <button class="tb-btn" onclick="fmt('quote')">"</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="addLink()">🔗</button>
+      <button class="tb-btn" onclick="addImage()">🖼</button>
+      <button class="tb-btn" onclick="fmt('removeFormat')">✕</button>
+    </div>
+    <div class="editor-body">
+      <div class="editor-content">
+        <div class="rich-editor" id="ed-body" contenteditable="true" data-placeholder="Start writing your content..."></div>
+      </div>
+    </div>
+    <div class="channels-bar"><span class="ch-label">Channels:</span>${chipsHtml}</div>
+    <div class="action-bar">
+      <button class="btn-action btn-save" onclick="createContent()">💾 Save as Draft</button>
+      <span class="ab-status"><span class="st st-draft">New Draft</span></span>
+    </div>`;
+  document.getElementById('ed-title').focus();
+}
+
+async function createContent() {
+  const payload = {
+    title:       document.getElementById('ed-title').value.trim(),
+    category:    document.getElementById('ed-cat').value,
+    sub_category:document.getElementById('ed-subcat').value,
+    body:        document.getElementById('ed-body').innerHTML,
+    channels:    getChannels(),
+  };
+  if (!payload.title) { alert('Title is required'); return; }
+  const res = await fetch('/api/studio', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  const d = await res.json();
+  currentId = d.id;
+  await load();
+  const item = allItems.find(i=>i['Content ID']===currentId);
+  if (item) renderEditor(item);
+}
+
+async function saveContent() {
+  const payload = {
+    action: 'save',
+    title:        document.getElementById('ed-title')?.value.trim(),
+    category:     document.getElementById('ed-cat')?.value,
+    sub_category: document.getElementById('ed-subcat')?.value,
+    body:         document.getElementById('ed-body')?.innerHTML,
+    channels:     getChannels(),
+  };
+  await fetch(`/api/studio/${currentId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+  await load();
+  const item = allItems.find(i=>i['Content ID']===currentId);
+  if (item) renderEditor(item);
+}
+
+async function submitContent() {
+  await saveContent();
+  await fetch(`/api/studio/${currentId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action:'submit'}) });
+  await load();
+  const item = allItems.find(i=>i['Content ID']===currentId);
+  if (item) renderEditor(item);
+}
+
+// ── Comment modal ─────────────────────────────────────────────
+let pendingAction = '';
+function openCmt(action) {
+  pendingAction = action;
+  const titles = {'validate_editor':'Validate as Editor','validate_admin':'Publish','reject':'Return to author'};
+  document.getElementById('cmt-title').textContent = titles[action] || action;
+  document.getElementById('cmt-text').value = '';
+  document.getElementById('cmt-overlay').classList.add('open');
+  document.getElementById('cmt-confirm').onclick = confirmCmt;
+}
+function closeCmt() { document.getElementById('cmt-overlay').classList.remove('open'); }
+
+async function confirmCmt() {
+  const comment = document.getElementById('cmt-text').value;
+  closeCmt();
+  await fetch(`/api/studio/${currentId}`, {
+    method:'PUT', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action: pendingAction, comment })
+  });
+  await load();
+  const item = allItems.find(i=>i['Content ID']===currentId);
+  if (item) renderEditor(item);
+}
+
+// ── Export ────────────────────────────────────────────────────
+function exportPDF(id) {
+  window.open(`/api/studio/${id}/export-pdf`, '_blank');
+}
+
+function exportLinkedIn(id) {
+  const item = allItems.find(i=>i['Content ID']===id);
+  if (!item) return;
+  const text = `📢 ${item.Title}\n\n${item.Body.replace(/<[^>]+>/g,'').slice(0,800)}...\n\n#BNPParibas #Finance`;
+  const el = document.createElement('textarea'); el.value = text;
+  document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+  alert('✅ LinkedIn text copied to clipboard!');
+}
+
+function exportTwitter(id) {
+  const item = allItems.find(i=>i['Content ID']===id);
+  if (!item) return;
+  const clean = item.Body.replace(/<[^>]+>/g,'');
+  const tweet = `${item.Title.slice(0,200)} ${clean.slice(0,60)}... #BNPParibas`;
+  const el = document.createElement('textarea'); el.value = tweet;
+  document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el);
+  alert('✅ Tweet copied to clipboard (280 chars max)!');
+}
+
+document.getElementById('cmt-overlay').addEventListener('click', closeCmt);
+load();
+</script>
+{% endblock %}

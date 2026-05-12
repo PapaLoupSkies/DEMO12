@@ -1,0 +1,7 @@
+﻿ID,English Name,French Name,Content Category,Content Sub Category,Classification,Description,Owner Team,Contact Team,Published Links,Domain,Priority,Aliases,Platform,Date de publication,Lien_url
+BG_001,Master Data,Master Data,Business Glossary,Business Glossary,Internal,Core business entities managed centrally,Data Office,Data Office,,Data Management,Critical,MDM,Internal Only,2023-08-17,https://group.bnpparibas/document-147
+BG_002,Reference Data,Donnees Reference,Business Glossary,Business Glossary,Internal,Standardized values across systems,Data Office,Data Office,,Data Management,High,Lookup,SharePoint;Intranet,2023-05-23,https://invest.bnpparibas/publication-529
+BG_003,KPI,Indicateur Performance,Business Glossary,Business Glossary,Internal,Quantifiable performance measure,Reporting,Data Office,,Performance,High,Metric,Internal Only;Intranet,2025-01-24,https://group.bnpparibas/publication-673
+BG_004,Metadata,Metadonnee,Business Glossary,Business Glossary,Internal,Data describing other data — contextual role,Data Office,Data Office,,Data Governance,High,Descriptive Data,Intranet,2023-04-15,
+BG_005,GDPR,RGPD,Business Glossary,Business Glossary,Internal,EU data protection regulation,Legal Counsel,Data Office,,Compliance,Critical,Data Protection,SharePoint,2024-11-23,https://securities.bnpparibas/document-481
+BG_006,Owner Team,Equipe Proprietaire,Business Glossary,Business Glossary,Internal,Team responsible for a content item,Data Office,Data Office,,Data Governance,High,Steward Team,Internal Only,2025-01-28,https://cib.bnpparibas/report-677

@@ -1,0 +1,662 @@
+<style>
+  /* Card view layout - scoped, no global overflow */
+  .kb-wrapper {
+    display: flex; flex-direction: column;
+    height: calc(100vh - 105px); overflow: hidden;
+  }
+
+  /* ── Barre contrôles ── */
+  .kb-controls {
+    flex: 0 0 auto; background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 18px; display: flex; align-items: center;
+    gap: 10px; flex-wrap: wrap; z-index: 10;
+  }
+
+  /* Search */
+  .kb-search-wrap { position: relative; flex: 0 0 170px; }
+  .kb-search-wrap svg { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text-muted); width: 13px; height: 13px; pointer-events: none; }
+  .kb-search-wrap input { width: 100%; padding: 5px 8px 5px 28px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter',sans-serif; font-size: 12px; color: var(--text); outline: none; }
+  .kb-search-wrap input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,107,94,.1); }
+
+  /* ── Slider zone ── */
+  .slider-zone {
+    flex: 1; min-width: 300px;
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px;
+  }
+  .slider-zone-label { font-size: 10px; font-weight: 700; color: var(--text-muted); white-space: nowrap; text-transform: uppercase; letter-spacing: .05em; }
+  .date-pickers { display: flex; flex-direction: column; gap: 3px; }
+  .date-picker-row { display: flex; align-items: center; gap: 4px; }
+  .date-picker-lbl { font-size: 10px; font-weight: 600; color: var(--text-muted); width: 18px; text-align: right; }
+  .date-picker-input {
+    font-family: 'Inter',sans-serif; font-size: 11px; font-weight: 500;
+    color: var(--accent); background: var(--accent-light);
+    border: 1px solid #b3d9d4; border-radius: 6px;
+    padding: 2px 5px; outline: none; cursor: pointer; width: 112px;
+    transition: border-color .15s;
+  }
+  .date-picker-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,107,94,.12); }
+  .date-picker-input::-webkit-calendar-picker-indicator { opacity: .5; cursor: pointer; }
+  .slider-track-wrap { flex: 1; position: relative; padding: 10px 8px 4px; min-width: 100px; }
+  .slider-track-bg { height: 4px; background: var(--border); border-radius: 2px; position: relative; }
+  .slider-track-fill { position: absolute; height: 100%; background: var(--accent); border-radius: 2px; top: 0; }
+  .slider-thumb { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: var(--white); border: 2px solid var(--accent); top: 50%; transform: translate(-50%,-50%); cursor: grab; transition: box-shadow .1s; z-index: 2; }
+  .slider-thumb:hover, .slider-thumb.dragging { box-shadow: 0 0 0 4px rgba(0,107,94,.18); }
+  .slider-thumb:active { cursor: grabbing; }
+  .slider-dates-row { display: flex; justify-content: space-between; margin-top: 3px; }
+  .slider-dates-row span { font-size: 10px; color: var(--text-muted); }
+
+  /* ── Panneaux filtre multi-select génériques ── */
+  .filter-wrap { position: relative; }
+  .filter-btn { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); cursor: pointer; font-family: 'Inter',sans-serif; font-size: 12px; font-weight: 500; color: var(--text); white-space: nowrap; user-select: none; transition: all .15s; }
+  .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .filter-badge { background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; display: none; }
+  .filter-chevron { width: 11px; height: 11px; stroke: currentColor; transition: transform .2s; flex-shrink: 0; }
+  .filter-panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 200; background: var(--white); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); min-width: 200px; display: none; }
+  .filter-panel.open { display: block; }
+  .filter-panel-hdr { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .filter-panel-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .filter-panel-actions { display: flex; gap: 8px; }
+  .filter-panel-actions button { font-size: 11px; font-family: 'Inter',sans-serif; cursor: pointer; border: none; background: none; color: var(--accent); font-weight: 600; padding: 0; }
+  .filter-panel-actions button:hover { text-decoration: underline; }
+  .filter-list { padding: 5px 0; max-height: 220px; overflow-y: auto; }
+  .filter-item { display: flex; align-items: center; gap: 8px; padding: 5px 12px; cursor: pointer; transition: background .1s; }
+  .filter-item:hover { background: var(--bg); }
+  .filter-item input[type=checkbox] { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+  .filter-item-lbl { font-size: 12px; color: var(--text); cursor: pointer; flex: 1; }
+  .filter-item-cnt { font-size: 10px; color: var(--text-muted); background: var(--bg); border-radius: 10px; padding: 1px 6px; }
+
+  /* Entités */
+  .entity-filter-wrap { position: relative; }
+  .entity-filter-btn { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--accent); border-radius: 7px; background: var(--accent-light); cursor: pointer; font-family: 'Inter',sans-serif; font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap; user-select: none; transition: all .15s; }
+  .entity-filter-btn:hover { background: var(--accent); color: #fff; }
+  .entity-filter-btn:hover .entity-chevron { stroke: #fff; }
+  .entity-badge { background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; display: none; }
+  .entity-filter-btn:hover .entity-badge { background: rgba(255,255,255,.3); }
+  .entity-chevron { width: 12px; height: 12px; stroke: var(--accent); transition: transform .2s; flex-shrink: 0; }
+  .entity-panel { position: absolute; top: calc(100% + 6px); left: 0; z-index: 200; background: var(--white); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12); min-width: 220px; display: none; }
+  .entity-panel.open { display: block; }
+  .entity-panel-hdr { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .entity-panel-hdr-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+  .entity-panel-actions { display: flex; gap: 8px; }
+  .entity-panel-actions button { font-size: 11px; font-family: 'Inter',sans-serif; cursor: pointer; border: none; background: none; color: var(--accent); font-weight: 600; padding: 0; }
+  .entity-panel-actions button:hover { text-decoration: underline; }
+  .entity-list { padding: 5px 0; max-height: 240px; overflow-y: auto; }
+  .entity-item { display: flex; align-items: center; gap: 8px; padding: 5px 12px; cursor: pointer; transition: background .1s; }
+  .entity-item:hover { background: var(--bg); }
+  .entity-cb { accent-color: var(--accent); width: 13px; height: 13px; cursor: pointer; flex-shrink: 0; }
+  .entity-lbl { font-size: 12px; color: var(--text); cursor: pointer; flex: 1; }
+  .entity-cnt { font-size: 10px; color: var(--text-muted); background: var(--bg); border-radius: 10px; padding: 1px 6px; }
+
+  /* Count & clear */
+  .kb-count { font-size: 12px; color: var(--text-muted); padding: 5px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: 20px; white-space: nowrap; }
+  .kb-count span { color: var(--accent); font-weight: 600; }
+  .kb-clear-btn { padding: 5px 10px; border-radius: 7px; font-size: 11px; font-family: 'Inter',sans-serif; cursor: pointer; border: 1px solid #e0a0a0; background: none; color: var(--red); display: none; }
+  .kb-clear-btn:hover { background: #fdecea; }
+  .kb-clear-btn.visible { display: inline-block; }
+
+  /* ── Board ── */
+  .kb-board { flex: 1 1 0; display: flex; gap: 14px; padding: 14px 18px; overflow-x: auto; overflow-y: hidden; align-items: flex-start; min-height: 0; }
+  .kb-board::-webkit-scrollbar { height: 7px; }
+  .kb-board::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .kb-empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  .kb-empty-state svg { width: 44px; height: 44px; stroke: var(--border); }
+  .kb-empty-state p { font-size: 14px; font-weight: 500; color: var(--text-muted); text-align: center; }
+  .kb-empty-state span { font-size: 12px; color: var(--text-muted); text-align: center; }
+  .kb-no-results { padding: 30px; font-size: 13px; color: var(--text-muted); text-align: center; }
+
+  /* ── Colonnes ── */
+  .kb-col { flex: 0 0 220px; display: flex; flex-direction: column; height: 100%; background: var(--bg); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+  .kb-col-header { flex: 0 0 auto; padding: 8px 11px; background: var(--white); border-bottom: 2px solid var(--accent); display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .kb-col-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .kb-col-badge { font-size: 10px; font-weight: 700; background: var(--accent); color: #fff; border-radius: 20px; padding: 1px 7px; flex-shrink: 0; }
+  .kb-cards { flex: 1 1 0; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 7px; min-height: 0; }
+  .kb-cards::-webkit-scrollbar { width: 4px; }
+  .kb-cards::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── Cards ── */
+  .kb-card { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; transition: border-color .15s, box-shadow .15s; }
+  .kb-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,107,94,.08); }
+  .kb-card-title { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; margin-bottom: 4px; }
+  .kb-card-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .kb-card-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 6px; }
+  .kb-tag { font-size: 10px; font-weight: 500; padding: 2px 6px; border-radius: 4px; }
+  .kb-tag-plat { background: var(--accent-light); color: #0a5a4e; }
+  .kb-tag-cat  { background: #ede9fb; color: #3c3489; }
+  .kb-card-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 5px; border-top: 1px solid var(--border); gap: 5px; }
+  .kb-card-date { font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 3px; }
+  .kb-card-date svg { width: 10px; height: 10px; flex-shrink: 0; }
+  .kb-card-link { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--accent); background: var(--accent-light); border: 1px solid #b3d9d4; border-radius: 5px; padding: 2px 7px; text-decoration: none; transition: all .15s; }
+  .kb-card-link:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .kb-card-btns { display: flex; flex-direction: row; gap: 5px; margin-top: 8px; }
+  .kb-card-more {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 5px 8px; cursor: pointer;
+    transition: all .15s; font-family: 'Inter',sans-serif;
+  }
+  .kb-card-more:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+  .kb-card-reuse {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 11px; font-weight: 700; color: #b07d2a;
+    background: #fdf3e0; border: 1.5px solid #e8c880;
+    border-radius: 6px; padding: 5px 8px; cursor: pointer;
+    transition: all .15s; font-family: 'Inter',sans-serif;
+  }
+  .kb-card-reuse:hover { background: #f5e8c0; border-color: #c8942a; color: #8a5e15; }
+  .kb-empty-col { font-size: 11px; color: var(--text-muted); text-align: center; padding: 16px 8px; }
+
+  /* ── Modal détail (scopé sur #modal-overlay uniquement) ── */
+  #kb-modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,.45); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  #kb-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box { background: var(--white); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.22); width: 100%; max-width: 560px; max-height: 85vh; display: flex; flex-direction: column; transform: translateY(16px) scale(.97); transition: transform .2s; overflow: hidden; }
+  #kb-modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+  .modal-header { flex: 0 0 auto; padding: 15px 18px 13px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 10px; }
+  .modal-header-text { flex: 1; min-width: 0; }
+  .modal-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.4; }
+  .modal-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .modal-close { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 15px; line-height: 1; transition: all .15s; }
+  .modal-close:hover { background: #fdecea; border-color: #e0a0a0; color: var(--red); }
+  .modal-body { flex: 1; overflow-y: auto; padding: 16px 18px; }
+  .modal-body::-webkit-scrollbar { width: 5px; }
+  .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .modal-section { margin-bottom: 16px; }
+  .modal-section:last-child { margin-bottom: 0; }
+  .modal-section-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .modal-field { display: flex; flex-direction: column; gap: 3px; }
+  .modal-field.full { grid-column: 1 / -1; }
+  .modal-field-lbl { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+  .modal-field-val { font-size: 12px; color: var(--text); line-height: 1.5; }
+  .modal-field-val.empty { color: var(--text-muted); font-style: italic; }
+  .modal-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .modal-link { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--accent); text-decoration: none; font-weight: 500; background: var(--accent-light); border: 1px solid #b3d9d4; border-radius: 6px; padding: 5px 10px; margin-top: 4px; transition: all .15s; word-break: break-all; }
+  .modal-link:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+
+<div class="kb-wrapper">
+
+  <!-- ── Contrôles ── -->
+  <div class="kb-controls">
+
+    <div class="kb-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="kb-search" placeholder="Rechercher..." oninput="renderBoard()">
+    </div>
+
+    <div class="slider-zone">
+      <span class="slider-zone-label">Date pub.</span>
+      <div class="date-pickers">
+        <div class="date-picker-row">
+          <span class="date-picker-lbl">De</span>
+          <input type="date" class="date-picker-input" id="picker-min" oninput="onPickerChange('min')">
+        </div>
+        <div class="date-picker-row">
+          <span class="date-picker-lbl">À</span>
+          <input type="date" class="date-picker-input" id="picker-max" oninput="onPickerChange('max')">
+        </div>
+      </div>
+      <div class="slider-track-wrap">
+        <div class="slider-track-bg" id="track-bg">
+          <div class="slider-track-fill" id="track-fill"></div>
+          <div class="slider-thumb" id="thumb-min" onmousedown="startDrag(event,'min')" ontouchstart="startDrag(event,'min')"></div>
+          <div class="slider-thumb" id="thumb-max" onmousedown="startDrag(event,'max')" ontouchstart="startDrag(event,'max')"></div>
+        </div>
+        <div class="slider-dates-row">
+          <span id="axis-start"></span>
+          <span id="axis-mid"></span>
+          <span id="axis-end"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="entity-filter-wrap" id="entity-wrap">
+      <div class="entity-filter-btn" id="entity-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+        Entités
+        <span class="entity-badge" id="entity-badge">0</span>
+        <svg class="entity-chevron" id="entity-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="entity-panel" id="entity-panel">
+        <div class="entity-panel-hdr">
+          <span class="entity-panel-hdr-title">Entités</span>
+          <div class="entity-panel-actions">
+            <button id="btn-all">Tout</button>
+            <button id="btn-none">Aucun</button>
+          </div>
+        </div>
+        <div class="entity-list" id="entity-list"></div>
+      </div>
+    </div>
+
+    <!-- Catégorie multi-select -->
+    <div class="filter-wrap" id="cat-wrap">
+      <div class="filter-btn" id="cat-btn">
+        Catégories
+        <span class="filter-badge" id="cat-badge">0</span>
+        <svg class="filter-chevron" id="cat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="filter-panel" id="cat-panel">
+        <div class="filter-panel-hdr">
+          <span class="filter-panel-title">Thématiques</span>
+          <div class="filter-panel-actions">
+            <button onclick="event.stopPropagation();selectAll('cat')">Tout</button>
+            <button onclick="event.stopPropagation();clearSel('cat')">Aucun</button>
+          </div>
+        </div>
+        <div class="filter-list" id="cat-list"></div>
+      </div>
+    </div>
+
+    <!-- Plateforme multi-select -->
+    <div class="filter-wrap" id="plat-wrap">
+      <div class="filter-btn" id="plat-btn">
+        Plateformes
+        <span class="filter-badge" id="plat-badge">0</span>
+        <svg class="filter-chevron" id="plat-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="filter-panel" id="plat-panel">
+        <div class="filter-panel-hdr">
+          <span class="filter-panel-title">Plateformes</span>
+          <div class="filter-panel-actions">
+            <button onclick="event.stopPropagation();selectAll('plat')">Tout</button>
+            <button onclick="event.stopPropagation();clearSel('plat')">Aucun</button>
+          </div>
+        </div>
+        <div class="filter-list" id="plat-list"></div>
+      </div>
+    </div>
+
+    <button class="kb-clear-btn" id="kb-clear">✕ Réinitialiser</button>
+    <div class="kb-count">Résultats : <span id="kb-result-count">—</span></div>
+  </div>
+
+  <!-- ── Board ── -->
+  <div class="kb-board" id="kb-board">
+    <div class="kb-empty-state" id="kb-empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/>
+      </svg>
+      <p>Merci de choisir les entités souhaitées</p>
+      <span>Utilisez le filtre <strong>Entités</strong> pour afficher les colonnes.</span>
+    </div>
+    <div class="kb-no-results" id="kb-no-results" style="display:none">Aucun résultat pour ces critères.</div>
+  </div>
+
+  <!-- ── Modal Reuse Card View ── -->
+  <div class="modal-overlay" id="kb-reuse-modal">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>♻️ Request to Reuse</h3>
+      <p id="kb-reuse-modal-desc"></p>
+      <textarea id="kb-reuse-message" placeholder="Optional message to the owner team..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="kb-reuse-cancel">Cancel</button>
+        <button class="btn-primary" id="kb-reuse-submit">Send Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Détail Card View ── -->
+  <div id="kb-modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <div class="modal-title" id="kb-modal-title"></div>
+          <div class="modal-subtitle" id="kb-modal-subtitle"></div>
+        </div>
+        <button class="modal-close" id="kb-modal-close">✕</button>
+      </div>
+      <div class="modal-body" id="kb-modal-body"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+const ALL_ROWS = KB_ROWS;
+const ALL_TEAMS = KB_TEAMS;
+const CATEGORIES = KB_CATS;
+const PLATFORMS = KB_PLATS;
+
+const allDates  = ALL_ROWS.map(r=>r["Published Date"]).filter(Boolean).sort();
+const GMIN = allDates[0] || KB_DATE_MIN;
+const GMAX = allDates[allDates.length-1] || KB_DATE_MAX;
+let slMin = GMIN, slMax = GMAX;
+
+function toTs(d){ return new Date(d).getTime(); }
+function fmtS(d){ return new Date(d).toLocaleDateString("fr-FR",{month:"short",year:"numeric"}); }
+function fmtF(d){ return new Date(d).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}); }
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// ── Sélections ──
+const sel     = new Set(); // entités
+const selCat  = new Set(); // catégories
+const selPlat = new Set(); // plateformes
+
+const cntByTeam = {};
+ALL_TEAMS.forEach(t=>{ cntByTeam[t]=ALL_ROWS.filter(r=>r["Owner Team"]===t).length; });
+const cntByCat  = {};
+CATEGORIES.forEach(c=>{ cntByCat[c]=ALL_ROWS.filter(r=>r["Primary Thematic"]===c).length; });
+const cntByPlat = {};
+PLATFORMS.forEach(p=>{ cntByPlat[p]=ALL_ROWS.filter(r=>(r["Platform"]||"").split(";").map(s=>s.trim()).includes(p)).length; });
+
+// ── Builder générique de liste de filtres ──
+function buildFilterList(listId, items, selSet, cntMap, onChange){
+  const list = document.getElementById(listId);
+  list.innerHTML = "";
+  items.forEach(val => {
+    const item = document.createElement("div"); item.className = "filter-item";
+    const cb = document.createElement("input"); cb.type = "checkbox";
+    cb.checked = selSet.has(val);
+    cb.addEventListener("change", ()=>{ cb.checked ? selSet.add(val) : selSet.delete(val); onChange(); });
+    const lbl = document.createElement("span"); lbl.className = "filter-item-lbl"; lbl.textContent = val;
+    lbl.addEventListener("click", ()=>{ cb.checked=!cb.checked; cb.checked?selSet.add(val):selSet.delete(val); onChange(); });
+    const cnt = document.createElement("span"); cnt.className = "filter-item-cnt"; cnt.textContent = cntMap[val]||0;
+    item.appendChild(cb); item.appendChild(lbl); item.appendChild(cnt);
+    list.appendChild(item);
+  });
+}
+
+function syncBadgeGeneric(badgeId, selSet){
+  const b = document.getElementById(badgeId);
+  b.textContent = selSet.size;
+  b.style.display = selSet.size > 0 ? "inline" : "none";
+}
+
+// ── Entités ──
+function buildEntityList(){ buildFilterList("entity-list", ALL_TEAMS, sel, cntByTeam, ()=>{ syncBadgeGeneric("entity-badge", sel); renderBoard(); }); }
+function syncBadge(){ syncBadgeGeneric("entity-badge", sel); }
+
+// ── Catégories ──
+function buildCatList(){ buildFilterList("cat-list", CATEGORIES, selCat, cntByCat, ()=>{ syncBadgeGeneric("cat-badge", selCat); document.getElementById("cat-btn").classList.toggle("active", selCat.size>0); renderBoard(); }); }
+
+// ── Plateformes ──
+function buildPlatList(){ buildFilterList("plat-list", PLATFORMS, selPlat, cntByPlat, ()=>{ syncBadgeGeneric("plat-badge", selPlat); document.getElementById("plat-btn").classList.toggle("active", selPlat.size>0); renderBoard(); }); }
+
+// ── selectAll / clearSel ──
+function selectAll(which){
+  if(which==="cat"){ CATEGORIES.forEach(c=>selCat.add(c)); buildCatList(); syncBadgeGeneric("cat-badge",selCat); document.getElementById("cat-btn").classList.add("active"); }
+  if(which==="plat"){ PLATFORMS.forEach(p=>selPlat.add(p)); buildPlatList(); syncBadgeGeneric("plat-badge",selPlat); document.getElementById("plat-btn").classList.add("active"); }
+  renderBoard();
+}
+function clearSel(which){
+  if(which==="cat"){ selCat.clear(); buildCatList(); syncBadgeGeneric("cat-badge",selCat); document.getElementById("cat-btn").classList.remove("active"); }
+  if(which==="plat"){ selPlat.clear(); buildPlatList(); syncBadgeGeneric("plat-badge",selPlat); document.getElementById("plat-btn").classList.remove("active"); }
+  renderBoard();
+}
+
+// ── Toggle générique de panel ──
+function togglePanel(wrapId, panelId, chevronId, buildFn){
+  const panel = document.getElementById(panelId);
+  const ch    = document.getElementById(chevronId);
+  const opening = !panel.classList.contains("open");
+  // Fermer tous les autres panels
+  ["entity-panel","cat-panel","plat-panel"].forEach(id=>{
+    document.getElementById(id).classList.remove("open");
+  });
+  ["entity-chevron","cat-chevron","plat-chevron"].forEach(id=>{
+    document.getElementById(id).style.transform="";
+  });
+  if(opening){
+    buildFn(); // construire la liste au moment de l'ouverture
+    panel.classList.add("open");
+    ch.style.transform="rotate(180deg)";
+  }
+}
+
+document.getElementById("entity-btn").addEventListener("click", e=>{ e.stopPropagation(); togglePanel("entity-wrap","entity-panel","entity-chevron", buildEntityList); });
+document.getElementById("cat-btn").addEventListener("click",    e=>{ e.stopPropagation(); togglePanel("cat-wrap","cat-panel","cat-chevron", buildCatList); });
+document.getElementById("plat-btn").addEventListener("click",   e=>{ e.stopPropagation(); togglePanel("plat-wrap","plat-panel","plat-chevron", buildPlatList); });
+
+// Fermer tous les panels au clic dehors
+document.addEventListener("click", e=>{
+  if(!e.target.closest("#entity-wrap") && !e.target.closest("#cat-wrap") && !e.target.closest("#plat-wrap")){
+    ["entity-panel","cat-panel","plat-panel"].forEach(id=>document.getElementById(id).classList.remove("open"));
+    ["entity-chevron","cat-chevron","plat-chevron"].forEach(id=>document.getElementById(id).style.transform="");
+  }
+});
+
+document.getElementById("btn-all").addEventListener("click",  e=>{ e.stopPropagation(); ALL_TEAMS.forEach(t=>sel.add(t)); buildEntityList(); syncBadge(); renderBoard(); });
+document.getElementById("btn-none").addEventListener("click", e=>{ e.stopPropagation(); sel.clear(); buildEntityList(); syncBadge(); renderBoard(); });
+document.getElementById("kb-clear").addEventListener("click", clearFilters);
+
+// ── Slider ──
+function initAxis(){
+  const mid=new Date((toTs(GMIN)+toTs(GMAX))/2).toISOString().slice(0,10);
+  document.getElementById("axis-start").textContent=fmtS(GMIN);
+  document.getElementById("axis-mid").textContent=fmtS(mid);
+  document.getElementById("axis-end").textContent=fmtS(GMAX);
+}
+function syncSlider(){
+  const range=toTs(GMAX)-toTs(GMIN);
+  const pMin=((toTs(slMin)-toTs(GMIN))/range)*100;
+  const pMax=((toTs(slMax)-toTs(GMIN))/range)*100;
+  document.getElementById("thumb-min").style.left=pMin+"%";
+  document.getElementById("thumb-max").style.left=pMax+"%";
+  document.getElementById("track-fill").style.left=pMin+"%";
+  document.getElementById("track-fill").style.right=(100-pMax)+"%";
+  const pm=document.getElementById("picker-min"), px=document.getElementById("picker-max");
+  if(pm.value!==slMin) pm.value=slMin;
+  if(px.value!==slMax) px.value=slMax;
+}
+function onPickerChange(which){
+  const val=document.getElementById("picker-"+which).value; if(!val) return;
+  if(which==="min") slMin=val>slMax?slMax:val<GMIN?GMIN:val;
+  else              slMax=val<slMin?slMin:val>GMAX?GMAX:val;
+  syncSlider(); renderBoard();
+}
+
+let dragging=null;
+function startDrag(e,which){ e.preventDefault(); dragging=which; document.getElementById("thumb-"+which).classList.add("dragging"); document.addEventListener("mousemove",onDrag); document.addEventListener("mouseup",stopDrag); document.addEventListener("touchmove",onDrag,{passive:false}); document.addEventListener("touchend",stopDrag); }
+function onDrag(e){ if(!dragging) return; e.preventDefault(); const rect=document.getElementById("track-bg").getBoundingClientRect(); const cx=e.touches?e.touches[0].clientX:e.clientX; const pct=Math.max(0,Math.min(1,(cx-rect.left)/rect.width)); const d=new Date(toTs(GMIN)+pct*(toTs(GMAX)-toTs(GMIN))).toISOString().slice(0,10); if(dragging==="min") slMin=d>slMax?slMax:d; else slMax=d<slMin?slMin:d; syncSlider(); renderBoard(); }
+function stopDrag(){ if(dragging) document.getElementById("thumb-"+dragging).classList.remove("dragging"); dragging=null; document.removeEventListener("mousemove",onDrag); document.removeEventListener("mouseup",stopDrag); document.removeEventListener("touchmove",onDrag); document.removeEventListener("touchend",stopDrag); }
+
+// ── Clear ──
+function clearFilters(){
+  slMin=GMIN; slMax=GMAX;
+  document.getElementById("kb-search").value="";
+  sel.clear(); selCat.clear(); selPlat.clear();
+  buildEntityList(); buildCatList(); buildPlatList();
+  syncBadge();
+  syncBadgeGeneric("cat-badge",selCat); document.getElementById("cat-btn").classList.remove("active");
+  syncBadgeGeneric("plat-badge",selPlat); document.getElementById("plat-btn").classList.remove("active");
+  syncSlider(); renderBoard();
+}
+
+// ── Render ──
+function renderBoard(){
+  CARD_DATA = []; // reset à chaque rendu
+  const q=document.getElementById("kb-search").value.trim().toLowerCase();
+  const tsMin=toTs(slMin), tsMax=toTs(slMax)+86400000;
+  const hasF=q||selCat.size||selPlat.size||slMin!==GMIN||slMax!==GMAX||sel.size>0;
+  document.getElementById("kb-clear").classList.toggle("visible",!!hasF);
+
+  const board=document.getElementById("kb-board");
+  const emptyState=document.getElementById("kb-empty-state");
+  const noRes=document.getElementById("kb-no-results");
+  [...board.querySelectorAll(".kb-col")].forEach(el=>el.remove());
+
+  if(sel.size===0){ emptyState.style.display="flex"; noRes.style.display="none"; document.getElementById("kb-result-count").textContent="—"; return; }
+  emptyState.style.display="none";
+
+  const filtered=ALL_ROWS.filter(r=>{
+    if(!sel.has(r["Owner Team"])) return false;
+    const d=r["Published Date"]; if(!d) return false;
+    const ts=toTs(d); if(ts<tsMin||ts>tsMax) return false;
+    if(selCat.size && !selCat.has(r["Primary Thematic"])) return false;
+    if(selPlat.size){
+      const rPlats=(r["Platform"]||"").split(";").map(s=>s.trim());
+      if(!rPlats.some(p=>selPlat.has(p))) return false;
+    }
+    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById("kb-result-count").textContent=filtered.length;
+
+  const byTeam={};
+  [...sel].forEach(t=>{byTeam[t]=[];});
+  filtered.forEach(r=>{ if(byTeam[r["Owner Team"]]!==undefined) byTeam[r["Owner Team"]].push(r); });
+  Object.values(byTeam).forEach(arr=>arr.sort((a,b)=>toTs(a["Published Date"])-toTs(b["Published Date"])));
+
+  if(filtered.length===0){noRes.style.display="block"; return;}
+  noRes.style.display="none";
+
+  [...sel].forEach(team=>{
+    const cards=byTeam[team]||[];
+    const col=document.createElement("div"); col.className="kb-col";
+    col.innerHTML=`<div class="kb-col-header"><span class="kb-col-title">${esc(team)}</span><span class="kb-col-badge">${cards.length}</span></div><div class="kb-cards">${cards.length===0?'<div class="kb-empty-col">Aucune carte</div>':cards.map(cardHtml).join("")}</div>`;
+    board.insertBefore(col,noRes);
+  });
+
+  board.querySelectorAll(".kb-card-more").forEach(btn=>{
+    btn.addEventListener("click",e=>{ e.stopPropagation(); openModal(CARD_DATA[+btn.dataset.idx]); });
+  });
+  board.querySelectorAll(".kb-card-reuse").forEach(btn=>{
+    btn.addEventListener("click",e=>{ e.stopPropagation(); openReuseModal(CARD_DATA[+btn.dataset.idx]); });
+  });
+}
+
+// ── Global card data store (évite l'encodage JSON dans les attributs HTML) ──
+let CARD_DATA = [];
+
+function cardHtml(r){
+  const idx = CARD_DATA.length;
+  CARD_DATA.push(r);
+  const plats=(r["Platform"]||"").split(";").map(s=>s.trim()).filter(Boolean);
+  const platTags=plats.map(p=>"<span class='kb-tag kb-tag-plat'>"+esc(p)+"</span>").join("");
+  const cat=r["Primary Thematic"]||"";
+  const catTag=cat?"<span class='kb-tag kb-tag-cat'>"+esc(cat)+"</span>":"";
+  const date=r["Published Date"]?fmtF(r["Published Date"]):"";
+  const url=r["Lien_url"]||"";
+
+  let footer = "<div class='kb-card-footer'>";
+  if(date) footer += "<div class='kb-card-date'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><rect x='3' y='4' width='18' height='18' rx='2'/><path d='M16 2v4M8 2v4M3 10h18'/></svg>"+date+"</div>";
+  else footer += "<div></div>";
+  if(url) footer += "<a class='kb-card-link' href='"+esc(url)+"' target='_blank' rel='noopener noreferrer'>&#8599; Ouvrir</a>";
+  footer += "</div>";
+
+  return "<div class='kb-card'>"
+    +"<div class='kb-card-title'>"+esc(r["Content Name (EN)"]||r["Doc Name (EN)"]||r["ID"]||"—")+"</div>"
+    +"<div class='kb-card-desc'>"+esc(r["Content Description"]||"")+"</div>"
+    +"<div class='kb-card-tags'>"+platTags+catTag+"</div>"
+    +footer
+    +"<div class='kb-card-btns'>"
+      +"<button class='kb-card-more' data-idx='"+idx+"'>&#9432; Détails</button>"
+      +"<button class='kb-card-reuse' data-idx='"+idx+"'>&#9851; Reuse</button>"
+    +"</div>"
+  +"</div>";
+}
+
+// ── Modal détail 100% dynamique ──
+const SKIP_KEYS = new Set(["English Name","French Name","List Name"]);
+const URL_RE = /^https?:\/\/.+/i;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function openModal(r){
+  document.getElementById("kb-modal-title").textContent=r["English Name"]||r["French Name"]||"—";
+  document.getElementById("kb-modal-subtitle").textContent=[r["Owner Team"],r["List Name"]].filter(Boolean).join(" · ");
+
+  // Séparer : champs URL, champs date, reste
+  const urlFields=[], dateFields=[], otherFields=[];
+  Object.entries(r).forEach(([k,v])=>{
+    if(SKIP_KEYS.has(k)) return;
+    const s=String(v||"").trim();
+    if(!s||s==="nan") return;
+    if(URL_RE.test(s))       urlFields.push([k,s]);
+    else if(DATE_RE.test(s)) dateFields.push([k,s]);
+    else                     otherFields.push([k,s]);
+  });
+
+  let html='';
+
+  // Champs principaux (non-URL, non-date)
+  if(otherFields.length){
+    html+='<div class="modal-section"><div class="modal-section-title">Informations</div><div class="modal-grid">';
+    otherFields.forEach(([k,v])=>{
+      // détecter si valeur multi (séparateur ;)
+      const parts=v.split(";").map(s=>s.trim()).filter(Boolean);
+      let content;
+      if(parts.length>1){
+        content=`<div class="modal-tags">${parts.map(p=>`<span class="kb-tag kb-tag-plat">${esc(p)}</span>`).join("")}</div>`;
+      } else {
+        content=`<div class="modal-field-val">${esc(v)}</div>`;
+      }
+      // Description et champs longs → full width
+      const full=v.length>80||k==="Description"||k==="Other Events"||k==="Main Event"||k==="Event Relations";
+      html+=`<div class="modal-field ${full?"full":""}"><div class="modal-field-lbl">${esc(k)}</div>${content}</div>`;
+    });
+    html+='</div></div>';
+  }
+
+  // Dates
+  if(dateFields.length){
+    html+='<div class="modal-section"><div class="modal-section-title">Dates</div><div class="modal-grid">';
+    dateFields.forEach(([k,v])=>{
+      html+=`<div class="modal-field"><div class="modal-field-lbl">${esc(k)}</div><div class="modal-field-val">${fmtF(v)}</div></div>`;
+    });
+    html+='</div></div>';
+  }
+
+  // URLs
+  if(urlFields.length){
+    html+='<div class="modal-section"><div class="modal-section-title">Liens</div>';
+    urlFields.forEach(([k,v])=>{
+      html+=`<div class="modal-field-lbl" style="margin-bottom:4px">${esc(k)}</div>
+        <a class="modal-link" href="${esc(v)}" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;flex-shrink:0"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          ${esc(v)}
+        </a>`;
+    });
+    html+='</div>';
+  }
+
+  if(!html) html='<p style="color:var(--text-muted);font-size:13px">Aucune information disponible.</p>';
+
+  document.getElementById("kb-modal-body").innerHTML=html;
+  document.getElementById("kb-modal-overlay").classList.add("open");
+  document.body.style.overflow="hidden";
+}
+function closeModal(){ document.getElementById("kb-modal-overlay").classList.remove("open"); document.body.style.overflow=""; }
+document.getElementById("kb-modal-close").addEventListener("click", closeModal);
+document.getElementById("kb-modal-overlay").addEventListener("click", e=>{ if(e.target===document.getElementById("kb-modal-overlay")) closeModal(); });
+
+// ── Reuse modal ──
+let reuseTarget=null;
+function openReuseModal(r){
+  reuseTarget=r;
+  document.getElementById("kb-reuse-modal-desc").textContent=`"${r["Content Name (EN)"]||r["Doc Name (EN)"]||r["ID"]||"?"}" (Owner: ${r["Owner Team"]||"?"})`;
+  document.getElementById("kb-reuse-message").value="";
+  document.getElementById("kb-reuse-modal").classList.add("open");
+}
+function closeReuseModal(){ document.getElementById("kb-reuse-modal").classList.remove("open"); reuseTarget=null; }
+document.getElementById("kb-reuse-cancel").addEventListener("click", closeReuseModal);
+document.getElementById("kb-reuse-modal").addEventListener("click", closeReuseModal);
+document.getElementById("kb-reuse-submit").addEventListener("click", async ()=>{
+  if(!reuseTarget) return;
+  await fetch("/api/reuse-request",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({content_id:reuseTarget.ID||reuseTarget["English Name"],content_name:reuseTarget["English Name"],list_name:reuseTarget["List Name"],owner_team:reuseTarget["Owner Team"],message:document.getElementById("kb-reuse-message").value})
+  });
+  closeReuseModal(); alert("✅ Reuse request sent!");
+});
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+// ── Init (appelé par switchView) ──
+// ── Expose functions called from inline HTML attributes ──
+window.kbInit          = function(){ initAxis(); syncSlider(); buildEntityList(); renderBoard(); };
+window.renderBoard     = renderBoard;
+window.onPickerChange  = onPickerChange;
+window.startDrag       = startDrag;
+window.selectAll       = selectAll;
+window.clearSel        = clearSel;
+window.clearFilters    = clearFilters;
+window.openModal       = openModal;
+window.closeModal      = closeModal;
+window.openReuseModal  = openReuseModal;
+window.closeReuseModal = closeReuseModal;
+})();
+</script>

@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}FAQ — Content Intelligence{% endblock %}
+
+{% block extra_head %}
+<style>
+  .faq-layout { display: grid; grid-template-columns: 1fr 380px; gap: 0; min-height: calc(100vh - 120px); }
+  .faq-main { padding: 16px 24px 40px; border-right: 1px solid var(--border); }
+  .faq-sidebar { padding: 16px 20px 40px; background: var(--bg); }
+
+  .faq-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .faq-card { background: var(--white); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+  .faq-card-header { padding: 14px 16px; cursor: pointer; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .faq-card-header:hover { background: var(--bg); }
+  .faq-question { font-weight: 500; font-size: 13px; color: var(--text); line-height: 1.5; flex: 1; }
+  .faq-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .faq-toggle { font-size: 14px; color: var(--text-muted); flex-shrink: 0; }
+  .faq-body { display: none; padding: 0 16px 14px; border-top: 1px solid var(--border-light); }
+  .faq-body.open { display: block; }
+  .faq-answer { font-size: 13px; color: var(--text); line-height: 1.7; padding-top: 12px; }
+  .faq-answer-meta { font-size: 11px; color: var(--text-muted); margin-top: 8px; }
+
+  /* Answer form (Editor only) */
+  .answer-form { margin-top: 12px; padding: 12px; background: var(--bg); border-radius: 8px; }
+  .answer-form textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-family: 'Inter', sans-serif; font-size: 13px; resize: vertical; min-height: 80px; outline: none; background: var(--white); }
+  .answer-form textarea:focus { border-color: var(--accent); }
+
+  /* Ask question sidebar */
+  .ask-form { background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .ask-form h4 { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--accent2); }
+  .ask-form textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 7px; font-family: 'Inter', sans-serif; font-size: 13px; resize: vertical; min-height: 100px; outline: none; background: var(--bg); margin-bottom: 10px; }
+  .ask-form textarea:focus { border-color: var(--accent); }
+
+  .stats-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .stat-box { flex: 1; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; }
+  .stat-box strong { display: block; font-size: 20px; font-weight: 600; }
+  .stat-box span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  @media(max-width:900px) { .faq-layout { grid-template-columns: 1fr; } .faq-sidebar { border-top: 1px solid var(--border); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="controls">
+  <div class="search-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Search questions and answers...">
+  </div>
+  <select id="filter-activity" onchange="renderFaqs()" style="padding:6px 22px 6px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;background:var(--bg);color:var(--text);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
+    <option value="">All Activities</option>
+  </select>
+  <div class="count-badge">Results: <span id="result-count">—</span></div>
+</div>
+
+<div class="faq-layout">
+  <!-- Main: FAQ list -->
+  <div class="faq-main">
+    <div class="faq-tabs">
+      <span class="chip active" data-status="all">All</span>
+      <span class="chip" data-status="answered">✅ Answered</span>
+      <span class="chip" data-status="pending">⏳ Pending</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><strong style="color:var(--accent)" id="cnt-total">—</strong><span>Total</span></div>
+      <div class="stat-box"><strong style="color:var(--approved)" id="cnt-answered">—</strong><span>Answered</span></div>
+      <div class="stat-box"><strong style="color:var(--pending)" id="cnt-pending">—</strong><span>Pending</span></div>
+    </div>
+
+    <div id="faq-list"><div class="loading">Loading...</div></div>
+  </div>
+
+  <!-- Sidebar: Ask a question -->
+  <div class="faq-sidebar">
+    <div class="ask-form">
+      <h4>💬 Ask a question</h4>
+      <textarea id="new-question" placeholder="Type your question here... Be specific so others can benefit from the answer."></textarea>
+      <button class="btn-primary" style="width:100%" onclick="submitQuestion()">Submit Question</button>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5">
+        Your question will be visible to all users. An Editor or Admin will answer it.
+      </p>
+    </div>
+
+    {% if user.access_group in ['Editor','Super Admin'] %}
+    <div style="margin-top:16px;padding:14px;background:var(--accent-light);border:1px solid #7ECFAA;border-radius:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px">⚙️ Editor — Pending questions</div>
+      <div id="pending-count-text" style="font-size:13px;color:var(--text-muted)">Loading...</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IS_EDITOR = {{ 'true' if user.access_group in ['Editor','Super Admin'] else 'false' }};
+const CUR_USER  = {{ user.username | tojson }};
+let ALL_FAQS = [], activeStatus = 'all';
+
+async function loadFaqs() {
+  const res = await fetch('/api/faq');
+  const d = await res.json();
+  ALL_FAQS = d.faqs;
+  // Peupler le select Activity avec les valeurs uniques
+  const sel = document.getElementById('filter-activity');
+  const activities = [...new Set(ALL_FAQS.map(f=>f.Activity||'').filter(Boolean))].sort();
+  activities.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a; opt.textContent = a;
+    sel.appendChild(opt);
+  });
+  updateStats();
+  renderFaqs();
+}
+
+function updateStats() {
+  const total    = ALL_FAQS.length;
+  const answered = ALL_FAQS.filter(f=>f.Status==='answered').length;
+  const pending  = ALL_FAQS.filter(f=>f.Status==='pending').length;
+  document.getElementById('cnt-total').textContent    = total;
+  document.getElementById('cnt-answered').textContent = answered;
+  document.getElementById('cnt-pending').textContent  = pending;
+  const el = document.getElementById('pending-count-text');
+  if (el) el.textContent = pending > 0 ? `${pending} question${pending>1?'s':''} waiting for your answer.` : 'No pending questions. 🎉';
+}
+
+function renderFaqs() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  const actFilter = document.getElementById('filter-activity').value;
+  let data = ALL_FAQS.filter(f => {
+    if (activeStatus !== 'all' && f.Status !== activeStatus) return false;
+    if (q && !(f.Question||'').toLowerCase().includes(q) && !(f.Answer||'').toLowerCase().includes(q)) return false;
+    if (actFilter && (f.Activity||'') !== actFilter) return false;
+    return true;
+  });
+  document.getElementById('result-count').textContent = data.length;
+  const list = document.getElementById('faq-list');
+  if (!data.length) { list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px">No questions found.</p>'; return; }
+
+  list.innerHTML = data.map(f => {
+    const isAnswered = f.Status === 'answered';
+    const actBadge = f.Activity ? `<span class="badge" style="background:#E5F7EE;color:#005C38;border:1px solid #7ECFAA">${esc(f.Activity)}</span>` : '';
+    const statusBadge = isAnswered
+      ? `<span class="badge badge-approved">✅ Answered</span>`
+      : `<span class="badge badge-pending">⏳ Pending</span>`;
+    const answerSection = isAnswered
+      ? `<div class="faq-answer">${esc(f.Answer)}</div>
+         <div class="faq-answer-meta">Answered by <strong>${esc(f['Answered By']||'')}</strong> on ${esc(f['Answered At']||'')}</div>`
+      : (IS_EDITOR
+          ? `<div class="answer-form">
+               <div style="font-size:11px;font-weight:600;color:var(--accent2);margin-bottom:6px">Write your answer</div>
+               <textarea id="ans-${esc(f['FAQ ID'])}" placeholder="Type your answer..."></textarea>
+               <div style="display:flex;justify-content:flex-end;margin-top:8px">
+                 <button class="btn-primary" style="font-size:12px;padding:6px 14px" onclick="submitAnswer('${esc(f['FAQ ID'])}')">Validate Answer</button>
+               </div>
+             </div>`
+          : `<div class="faq-answer" style="color:var(--text-muted);font-style:italic">No answer yet. An Editor will respond soon.</div>`
+        );
+    return `<div class="faq-card">
+      <div class="faq-card-header" onclick="toggleFaq('body-${esc(f['FAQ ID'])}',this)">
+        <div>
+          <div class="faq-question">${esc(f.Question)}</div>
+          <div class="faq-meta">Asked by <strong>${esc(f['Asked By']||'')}</strong> on ${esc(f['Created At']||'')} &nbsp;${statusBadge}</div>
+        </div>
+        <span class="faq-toggle">▼</span>
+      </div>
+      <div class="faq-body" id="body-${esc(f['FAQ ID'])}">${answerSection}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleFaq(id, header) {
+  const body = document.getElementById(id);
+  const icon = header.querySelector('.faq-toggle');
+  const isOpen = body.classList.toggle('open');
+  icon.textContent = isOpen ? '▲' : '▼';
+}
+
+async function submitQuestion() {
+  const q = document.getElementById('new-question').value.trim();
+  if (!q) { alert('Please type a question.'); return; }
+  await fetch('/api/faq/ask', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question:q}) });
+  document.getElementById('new-question').value = '';
+  await loadFaqs();
+  alert('✅ Question submitted!');
+}
+
+async function submitAnswer(faqId) {
+  const answer = document.getElementById('ans-'+faqId).value.trim();
+  if (!answer) { alert('Please write an answer.'); return; }
+  await fetch('/api/faq/answer', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id:faqId, answer}) });
+  await loadFaqs();
+}
+
+document.querySelectorAll('[data-status]').forEach(chip=>{
+  chip.addEventListener('click',()=>{
+    activeStatus = chip.dataset.status;
+    document.querySelectorAll('[data-status]').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+    renderFaqs();
+  });
+});
+
+document.getElementById('search').addEventListener('input', renderFaqs);
+loadFaqs();
+</script>
+{% endblock %}

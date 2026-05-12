@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Content Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--accent:#006b5e;--border:#e2e2de;--text:#1a1a1a;--text-muted:#888;--bg:#f7f7f5;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .card{background:#fff;border-radius:14px;box-shadow:0 4px 24px rgba(0,0,0,.10);padding:44px 40px 36px;width:400px;}
+  .logo{font-family:'Libre Baskerville',serif;font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+  .subtitle{font-size:13px;color:var(--text-muted);margin-bottom:30px;}
+  label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:5px;}
+  input[type=text],input[type=password]{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:14px;outline:none;margin-bottom:16px;transition:border-color .2s;}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,107,94,.1);}
+  .btn{width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;}
+  .btn:hover{background:#005548;}
+  .error{background:#fdecea;border:1px solid #f0b8b4;color:#c0392b;border-radius:7px;padding:10px 14px;font-size:13px;margin-bottom:16px;}
+  .demo{margin-top:22px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);line-height:1.8;}
+  .demo strong{display:block;margin-bottom:4px;color:var(--text);}
+  code{background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-size:11px;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Knowledge Base</div>
+  <div class="subtitle">Data Catalog — Sign in to continue</div>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}<div class="error">{{ messages[0] }}</div>{% endif %}
+  {% endwith %}
+  <form method="POST">
+    <label>Username</label>
+    <input type="text" name="username" autofocus required>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    <button class="btn" type="submit">Sign In</button>
+  </form>
+  <div class="demo">
+    <strong>Demo accounts (password: Pass1234!)</strong>
+    Super Admin: <code>superadmin</code><br>
+    Editor: <code>alice.martin</code> · <code>carol.white</code> · <code>hugo.moreau</code><br>
+    Read Only: <code>bob.dupont</code> · <code>david.chen</code>
+  </div>
+</div>
+</body>
+</html>

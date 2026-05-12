@@ -1,0 +1,22 @@
+﻿UserID,Username,User Name,Department,Sub Department,Team,Access Group
+USR_001,alice.martin,Alice Martin,Technology,Data & AI,Data Office,Editor
+USR_002,bob.dupont,Bob Dupont,Finance,Financial Control,Reporting,Read Only
+USR_003,carol.white,Carol White,Communication,External Comms,Press & Media,Editor
+USR_004,david.chen,David Chen,Technology,Data & AI,AI Lab,Read Only
+USR_005,emma.leroy,Emma Leroy,Finance,Strategy & Planning,Budget & Forecast,Read Only
+USR_006,francois.bernard,Francois Bernard,HR,Talent,Learning & Development,Editor
+USR_007,grace.kim,Grace Kim,Technology,Infrastructure,IT Operations,Read Only
+USR_008,hugo.moreau,Hugo Moreau,Risk & Compliance,Risk,Risk Management,Editor
+USR_009,isabelle.loc,Isabelle Loc,Business,Retail Banking,Private Banking,Read Only
+USR_010,jean-paul.petit,Jean-Paul Petit,Finance,Financial Control,Accounting,Editor
+USR_011,karine.dubois,Karine Dubois,Technology,Data & AI,Data Office,Read Only
+USR_012,luc.fontaine,Luc Fontaine,Risk & Compliance,Legal,Legal Counsel,Read Only
+USR_013,marie.clouard,Marie Clouard,Communication,External Comms,Social Media,Read Only
+USR_014,nicolas.otton,Nicolas Otton,Business,Corporate Banking,CIB,Editor
+USR_015,ophelie.bussiere,Ophelie Bussiere,HR,HR Operations,People Analytics,Read Only
+USR_016,pierre.lambert,Pierre Lambert,Technology,Infrastructure,Cybersecurity,Editor
+USR_017,quentin.roux,Quentin Roux,Risk & Compliance,Compliance,Regulatory Affairs,Read Only
+USR_018,remi.girard,Remi Girard,Business,Retail Banking,Personal Banking,Read Only
+USR_019,sophie.marchand,Sophie Marchand,Finance,Strategy & Planning,Investor Relations,Read Only
+USR_020,thomas.lefevre,Thomas Lefevre,Risk & Compliance,Compliance,Regulatory Affairs,Editor
+USR_021,superadmin,Super Admin,Technology,Data & AI,Data Office,Super Admin

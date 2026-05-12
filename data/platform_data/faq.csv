@@ -1,0 +1,6 @@
+﻿FAQ ID,Question,Asked By,Answer,Answered By,Status,Created At,Answered At,Activity
+FAQ_001,How do I request to reuse content?,bob.dupont,Click Reuse button on any row. Owner team gets notified.,alice.martin,answered,2026-04-01,2026-04-02,Data Governance
+FAQ_002,Difference between Editor and Read Only?,grace.kim,,,pending,2026-04-10,,People Analytics
+FAQ_003,How to find content by department?,emma.leroy,Use Content by Pole with cascade filters.,carol.white,answered,2026-03-15,2026-03-16,Data Governance
+FAQ_004,Can I upload documents?,quentin.roux,,,pending,2026-04-12,,Data Engineering
+FAQ_005,What is Master Data?,remi.girard,Core business entities — employees.csv is the Master Data.,alice.martin,answered,2026-03-20,2026-03-21,Data Governance

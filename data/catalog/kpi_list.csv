@@ -1,0 +1,7 @@
+﻿ID,English Name,French Name,Content Category,Content Sub Category,Classification,Description,Owner Team,Contact Team,Published Links,Frequency,Measured Data,Data Quality Score,Strategy KPI?,Platform,Date de publication,Lien_url
+KPI_001,Revenue Growth Rate,Taux Croissance Revenu,KPI,KPI,Internal,Net Revenue vs Prior Period,Reporting,Data Office,,Monthly,12.3%,97.4%,Yes,Internal Only,2024-10-16,https://invest.bnpparibas/brief-766
+KPI_002,Customer NPS Score,Score NPS,KPI,KPI,External,Net Promoter Score,Social Media,Data Office,,Quarterly,51,High,No,Internal Only,2023-04-25,https://securities.bnpparibas/report-474
+KPI_003,Employee Turnover,Taux Rotation,KPI,KPI,Internal,Departures / Avg Headcount,People Analytics,Data Office,,Annual,8.2%,High,No,Intranet;Internal Only,2023-01-26,https://securities.bnpparibas/document-138
+KPI_004,IT Incident Resolution,Delai Resolution IT,KPI,KPI,Internal,Avg hours to close P1/P2,IT Operations,Data Office,,Weekly,5.1h,High,Yes,Internal Only;SharePoint,2025-01-29,https://hellobank.fr/report-346
+KPI_005,Data Quality Score,Score Qualite,KPI,KPI,Internal,% records passing rules,Data Office,Data Office,,Monthly,97.4%,Critical,Yes,SharePoint,2023-10-09,https://hellobank.fr/article-946
+KPI_006,Compliance Training,Taux Formation,KPI,KPI,Internal,% staff trained,Regulatory Affairs,People Analytics,,Annual,94%,Critical,Yes,SharePoint;Internal Only,2023-09-08,https://invest.bnpparibas/article-690

@@ -1,0 +1,23 @@
+﻿Department,Sub Department,Team
+Technology,Data & AI,Data Office
+Technology,Data & AI,AI Lab
+Technology,Infrastructure,IT Operations
+Technology,Infrastructure,Cybersecurity
+Technology,Development,Digital Factory
+Technology,Development,Mobile & Web
+Finance,Financial Control,Accounting
+Finance,Financial Control,Reporting
+Finance,Strategy & Planning,Budget & Forecast
+Finance,Strategy & Planning,Investor Relations
+Communication,External Comms,Press & Media
+Communication,External Comms,Social Media
+Communication,Internal Comms,Employee Engagement
+Risk & Compliance,Risk,Risk Management
+Risk & Compliance,Compliance,Regulatory Affairs
+Risk & Compliance,Legal,Legal Counsel
+HR,Talent,Recruitment
+HR,Talent,Learning & Development
+HR,HR Operations,People Analytics
+Business,Retail Banking,Personal Banking
+Business,Retail Banking,Private Banking
+Business,Corporate Banking,CIB

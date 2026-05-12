@@ -1,0 +1,26 @@
+﻿Employee ID,Employee Name,Department,Sub Department,Team,Manager,Activity Category,Activity Sub Category,Workscope
+EMP_001,Alice Martin,Technology,Data & AI,Data Office,EMP_010,Data & Analytics,Data Governance,Group
+EMP_002,Bob Dupont,Finance,Financial Control,Reporting,EMP_010,Finance,Financial Reporting,France
+EMP_003,Carol White,Communication,External Comms,Press & Media,EMP_012,Communication,Press Relations,Group
+EMP_004,David Chen,Technology,Data & AI,AI Lab,EMP_001,Data & Analytics,Data Science,World
+EMP_005,Emma Leroy,Finance,Strategy & Planning,Budget & Forecast,EMP_010,Finance,Budget & Forecast,France
+EMP_006,Francois Bernard,HR,Talent,Learning & Development,EMP_015,HR,Learning & Development,France
+EMP_007,Grace Kim,Technology,Infrastructure,IT Operations,EMP_016,Technology,IT Operations,Group
+EMP_008,Hugo Moreau,Risk & Compliance,Risk,Risk Management,EMP_017,Risk & Compliance,Risk Management,Group
+EMP_009,Isabelle Loc,Business,Retail Banking,Private Banking,EMP_018,Business,Wealth Management,France
+EMP_010,Jean-Paul Petit,Finance,Financial Control,Accounting,EMP_010,Finance,Financial Reporting,Group
+EMP_011,Karine Dubois,Technology,Data & AI,Data Office,EMP_001,Data & Analytics,Data Engineering,Group
+EMP_012,Luc Fontaine,Risk & Compliance,Legal,Legal Counsel,EMP_017,Risk & Compliance,Legal Affairs,France
+EMP_013,Marie Clouard,Communication,External Comms,Social Media,EMP_003,Communication,Social Media Management,World
+EMP_014,Nicolas Otton,Business,Corporate Banking,CIB,EMP_018,Business,Corporate Banking,World
+EMP_015,Ophelie Bussiere,HR,HR Operations,People Analytics,EMP_006,HR,People Analytics,France
+EMP_016,Pierre Lambert,Technology,Infrastructure,Cybersecurity,EMP_007,Technology,Cybersecurity,Group
+EMP_017,Quentin Roux,Risk & Compliance,Compliance,Regulatory Affairs,EMP_008,Risk & Compliance,Regulatory Compliance,France
+EMP_018,Remi Girard,Business,Retail Banking,Personal Banking,EMP_009,Business,Retail Banking,France
+EMP_019,Sophie Marchand,Finance,Strategy & Planning,Investor Relations,EMP_010,Finance,Investor Relations,Group
+EMP_020,Thomas Lefevre,Risk & Compliance,Compliance,Regulatory Affairs,EMP_017,Risk & Compliance,Regulatory Compliance,France
+EMP_021,Yasmine Benali,Communication,Internal Comms,Employee Engagement,EMP_003,Communication,Internal Communications,France
+EMP_022,Zoe Dupuis,HR,Talent,Recruitment,EMP_006,HR,Talent Acquisition,France
+EMP_023,Antoine Lebrun,Technology,Development,Digital Factory,EMP_007,Technology,Software Development,World
+EMP_024,Beatrice Belorgey,Finance,Financial Control,Reporting,EMP_010,Finance,Financial Reporting,Group
+EMP_025,Charles Martin,Technology,Development,Mobile & Web,EMP_023,Technology,Software Development,World
