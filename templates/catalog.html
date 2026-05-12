@@ -33,6 +33,23 @@
   .pg-btn:disabled { opacity:.4; cursor:default; }
   .pg-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
   .pg-pages { display:flex; gap:3px; }
+
+  /* Search highlight */
+  mark { background:#fff3b0; color:var(--text); border-radius:2px; padding:0 2px; font-style:normal; }
+
+  /* Dynamic badge color palette */
+  .bc-0  { background:#e6f2f0; color:#0a5a4e; border-color:#b3d9d4; }
+  .bc-1  { background:#ede9fb; color:#3c3489; border-color:#d0c8f5; }
+  .bc-2  { background:#fdf3e0; color:#8a5e15; border-color:#e8c880; }
+  .bc-3  { background:#fdecea; color:#9c2a22; border-color:#f0b8b4; }
+  .bc-4  { background:#e8f5ee; color:#1a6b3c; border-color:#b3d9c4; }
+  .bc-5  { background:#e8f0fb; color:#1a3a8a; border-color:#b3c4e8; }
+  .bc-6  { background:#fce8f5; color:#8a1a6b; border-color:#e8b3d9; }
+  .bc-7  { background:#f0f5e8; color:#4a6b1a; border-color:#c4d9b3; }
+  .bc-8  { background:#e8f5f5; color:#1a6b6b; border-color:#b3d9d9; }
+  .bc-9  { background:#f5f0e8; color:#6b4a1a; border-color:#d9c4b3; }
+  .bc-10 { background:#f5e8f0; color:#6b1a4a; border-color:#d9b3c4; }
+  .bc-11 { background:#e8e8f5; color:#2a2a6b; border-color:#b3b3d9; }
   /* Cell expand */
   .cell-wrap { position: relative; }
   .cell-short { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -183,10 +200,34 @@ let currentPage = 1;
 function debounce(fn, delay) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
+// ── Highlight search terms ──
+let _currentQ = '';
+function highlight(text, q) {
+  if (!q || !text || text === 'nan') return esc(String(text));
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return esc(String(text)).replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>');
+}
+
+// ── Consistent color for badge values (hash-based) ──
+function badgeColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
+  return 'bc-' + (h % 12);
+}
+function makeBadge(text, q) {
+  const span = document.createElement('span');
+  span.className = 'badge ' + badgeColor(text);
+  span.style.marginRight = '3px';
+  span.style.marginBottom = '2px';
+  span.innerHTML = highlight(text, q);
+  return span;
+}
+
 const VISIBLE_COLS = [
   'Primary Thematic','Platform','Content Family','Content Types',
   'Content Name (EN)','Content Name (FR)','Content Description',
-  'Content Published Link','Owner Team','Author Team','Contact Team'
+  'Content Published Link','Owner Team','Author Team','Contact Team',
+  'Published Date','Last Update Date'
 ];
 
 // Sets de sélection — déclarés AVANT loadData
@@ -531,6 +572,7 @@ function renderPage(data) {
     const tr=document.createElement('tr'); if(isExp)tr.classList.add('expanded');
 
     // ── Dynamic columns from VISIBLE_COLS ──
+    const _q = document.getElementById('search').value.toLowerCase().trim();
     VISIBLE_COLS.forEach(col=>{
       const val=row[col]??'';
       const td=document.createElement('td');
@@ -545,7 +587,7 @@ function renderPage(data) {
       }
       // Team columns — badge
       else if((col==='Owner Team'||col==='Author Team'||col==='Contact Team') && strVal && strVal!=='nan'){
-        const b=document.createElement('span'); b.className='badge badge-team'; b.textContent=strVal; td.appendChild(b);
+        td.appendChild(makeBadge(strVal, _q));
       }
       // Long text columns — expandable cell
       else if(col==='Content Description'||col==='Description'||strVal.length>80){
@@ -553,14 +595,22 @@ function renderPage(data) {
       }
       // Multi-value columns (;-separated) — pills
       else if(strVal.includes(';')){
-        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; const b=document.createElement('span'); b.className='badge badge-category'; b.textContent=s; b.style.marginRight='2px'; td.appendChild(b); });
+        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; td.appendChild(makeBadge(s, _q)); });
       }
       // Empty
+      else if((col.includes('Date')||col.includes('date')) && strVal && strVal!=='nan'){
+        // Format date nicely
+        try {
+          const d = new Date(strVal);
+          const fmt = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+          td.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">📅 '+highlight(fmt,_q)+'</span>';
+        } catch(e) { td.innerHTML=highlight(strVal,_q); td.style.fontSize='12px'; }
+      }
       else if(!strVal||strVal==='nan'){
         td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
       }
-      // Default text
-      else { td.textContent=strVal; td.style.fontSize='12px'; }
+      // Default text with highlight
+      else { td.innerHTML=highlight(strVal,_q); td.style.fontSize='12px'; }
 
       tr.appendChild(td);
     });

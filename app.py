@@ -21,7 +21,8 @@ DEFAULT_PASS= "Pass1234!"
 COMMON_COLS = [
     "Primary Thematic", "Platform", "Content Family", "Content Types",
     "Content Name (EN)", "Content Name (FR)", "Content Description",
-    "Content Published Link", "Owner Team", "Author Team", "Contact Team"
+    "Content Published Link", "Owner Team", "Author Team", "Contact Team",
+    "Published Date", "Last Update Date"
 ]
 
 # Common columns for Document Hub (first 10 of document_hub.csv)

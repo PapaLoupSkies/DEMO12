@@ -541,7 +541,7 @@ function cardHtml(r){
   footer += "</div>";
 
   return "<div class='kb-card'>"
-    +"<div class='kb-card-title'>"+esc(r["Content Name (EN)"]||r["Doc Name (EN)"]||r["ID"]||"—")+"</div>"
+    +"<div class='kb-card-title'>"+esc(r["Content Name (EN)"]||r["Content Name (FR)"]||"—")+"</div>"
     +"<div class='kb-card-desc'>"+esc(r["Content Description"]||"")+"</div>"
     +"<div class='kb-card-tags'>"+platTags+catTag+"</div>"
     +footer
@@ -558,7 +558,7 @@ const URL_RE = /^https?:\/\/.+/i;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function openModal(r){
-  document.getElementById("kb-modal-title").textContent=r["English Name"]||r["French Name"]||"—";
+  document.getElementById("kb-modal-title").textContent=r["Content Name (EN)"]||r["Content Name (FR)"]||"—";
   document.getElementById("kb-modal-subtitle").textContent=[r["Owner Team"],r["List Name"]].filter(Boolean).join(" · ");
 
   // Séparer : champs URL, champs date, reste
