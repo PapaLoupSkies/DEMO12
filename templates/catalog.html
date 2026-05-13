@@ -114,6 +114,10 @@ const KB_DATE_MAX  = "{{ date_max }}";
     <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thématique ▾</button>
     <div class="dd-filter-panel" id="dd-category-panel"></div>
   </div>
+  <div id="dd-entity-wrap" style="position:relative;display:inline-block">
+    <button class="dd-filter-btn" id="dd-entity-btn" onclick="toggleDd('entity')">Entités ▾</button>
+    <div class="dd-filter-panel" id="dd-entity-panel"></div>
+  </div>
   <select id="sel-platform-cat" onchange="applyPlatformFilter()" style="padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:var(--bg);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
     <option value="">All Platforms</option>
   </select>
@@ -230,6 +234,7 @@ const VISIBLE_COLS = [
 
 // Sets de sélection — déclarés AVANT loadData
 let selectedCategories = new Set();
+let selectedEntities = new Set();
 let selectedLists = new Set();
 let selectedPlatforms = new Set();
 
@@ -297,8 +302,10 @@ function buildChips() {
   const allCats = new Set();
   ALL_DATA.forEach(r => (r['Primary Thematic']||'').split(';').map(s=>s.trim()).filter(Boolean).forEach(c=>allCats.add(c)));
   buildDdPanel('category', [...allCats].sort(), selectedCategories);
-  // Plateformes
-
+  // Entités
+  const allEntities = new Set();
+  ALL_DATA.forEach(r => { if(r['Owner Team']) allEntities.add(r['Owner Team']); });
+  buildDdPanel('entity', [...allEntities].sort(), selectedEntities);
 }
 
 function buildDdPanel(type, values, selected) {
@@ -349,33 +356,38 @@ function buildDdPanel(type, values, selected) {
 }
 
 function applyDdFilter(type, selected) {
+  const setMap = {category: selectedCategories, entity: selectedEntities, list: selectedLists, platform: selectedPlatforms};
+  const resolvedSet = setMap[type] || selected;
   const panel = document.getElementById('dd-'+type+'-panel');
   const checked = [...panel.querySelectorAll('.dd-item input:checked')].map(cb=>cb.value);
-  selected.clear();
-  checked.forEach(v => selected.add(v));
-  updateDdBtn(type, selected);
-  document.getElementById('dd-clear-all').style.display = selectedCategories.size ? '' : 'none';
+  resolvedSet.clear();
+  checked.forEach(v => resolvedSet.add(v));
+  const selected2 = resolvedSet;
+  updateDdBtn(type, resolvedSet);
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size) ? '' : 'none';
   updatePlatformOptions();
   expandedRows.clear(); render();
 }
 
 function clearDd(type) {
-  const sel = type==='category' ? selectedCategories : (type==='platform' ? selectedPlatforms : selectedLists);
+  const sel = type==='category' ? selectedCategories : type==='entity' ? selectedEntities : (type==='platform' ? selectedPlatforms : selectedLists);
   sel.clear();
   const panel = document.getElementById('dd-'+type+'-panel');
   panel.querySelectorAll('.dd-item input').forEach(cb => cb.checked = false);
   updateDdBtn(type, sel);
-  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedPlatforms.size) ? '' : 'none';
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size||selectedPlatforms.size) ? '' : 'none';
   expandedRows.clear(); render();
 }
 
 function clearTopFilters() {
   selectedCategories.clear();
-  // Reset Category dropdown
+  selectedEntities.clear();
   const catPanel = document.getElementById('dd-category-panel');
   if(catPanel) catPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
   updateDdBtn('category', new Set());
-  // Reset Platform select
+  const entPanel = document.getElementById('dd-entity-panel');
+  if(entPanel) entPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateDdBtn('entity', new Set());
   document.getElementById('sel-platform-cat').value = '';
   updatePlatformOptions();
   document.getElementById('dd-clear-all').style.display = 'none';
@@ -406,7 +418,7 @@ function toggleDd(type) {
 
 // Fermer les dropdowns si clic ailleurs
 document.addEventListener('click', e => {
-  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-list-wrap')) {
+  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-entity-wrap') && !e.target.closest('#dd-list-wrap')) {
     document.querySelectorAll('.dd-filter-panel').forEach(p => p.classList.remove('open'));
   }
 });
@@ -476,10 +488,14 @@ function getFiltered(){
       const plats = (r['Platform']||'').split(';').map(s=>s.trim());
       if(!plats.includes(platVal)) return false;
     }
-    // Filtre Category (dropdown multi-select)
+    // Filtre Category
     if(selectedCategories.size > 0){
       const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
       if(!cats.some(c=>selectedCategories.has(c))) return false;
+    }
+    // Filtre Entités (Owner Team)
+    if(selectedEntities.size > 0){
+      if(!selectedEntities.has(r['Owner Team'])) return false;
     }
     // Recherche textuelle
     if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
