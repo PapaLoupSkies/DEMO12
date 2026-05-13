@@ -577,39 +577,43 @@ function renderPage(data) {
       const td=document.createElement('td');
       const strVal=String(val);
 
-      // Link columns
-      if((col==='Content Published Link'||col==='Doc Published Link'||col==='Lien_url') && strVal && strVal!=='nan'){
+      // ── Column type detection ──
+      const isLink    = (col==='Content Published Link'||col==='Doc Published Link'||col==='Lien_url') && /^https?:\/\//.test(strVal);
+      const isDate    = /^\d{4}-\d{2}-\d{2}/.test(strVal) && (col.toLowerCase().includes('date'));
+      const isLongTxt = (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)');
+      const isEmpty   = !strVal || strVal==='nan';
+
+      if(isEmpty){
+        td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+      }
+      // Link
+      else if(isLink){
         const a=document.createElement('a'); a.href=strVal; a.target='_blank'; a.rel='noopener noreferrer';
         a.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);font-weight:600;';
         a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ouvrir';
         td.appendChild(a);
       }
-      // Team columns — badge
-      else if((col==='Owner Team'||col==='Author Team'||col==='Contact Team') && strVal && strVal!=='nan'){
-        td.appendChild(makeBadge(strVal, _q));
-      }
-      // Long text columns — expandable cell
-      else if(col==='Content Description'||col==='Description'||strVal.length>60){
-        const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
-      }
-      // Multi-value columns (;-separated) — pills
-      else if(strVal.includes(';')){
-        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; td.appendChild(makeBadge(s, _q)); });
-      }
-      // Empty
-      else if((col.includes('Date')||col.includes('date')) && strVal && strVal!=='nan'){
-        // Format date nicely
+      // Date
+      else if(isDate){
         try {
           const d = new Date(strVal);
           const fmt = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
           td.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">📅 '+highlight(fmt,_q)+'</span>';
-        } catch(e) { td.innerHTML=highlight(strVal,_q); td.style.fontSize='12px'; }
+        } catch(e) { td.innerHTML=highlight(strVal,_q); }
       }
-      else if(!strVal||strVal==='nan'){
-        td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+      // Long / plain text columns
+      else if(isLongTxt || strVal.length>80){
+        const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
       }
-      // Default text with highlight
-      else { td.innerHTML=highlight(strVal,_q); td.style.fontSize='12px'; }
+      // Everything else → always badge(s), split by ;
+      else {
+        const parts = strVal.split(';').map(v=>v.trim()).filter(v=>v&&v!=='nan');
+        if(parts.length===0){
+          td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+        } else {
+          parts.forEach(v=>{ td.appendChild(makeBadge(v, _q)); });
+        }
+      }
 
       tr.appendChild(td);
     });
@@ -652,25 +656,27 @@ function renderPage(data) {
             dash.style.cssText = 'color:var(--text-muted);font-style:italic;font-size:12px';
             dash.textContent = '—';
             sec.appendChild(dash);
-          } else if (valStr.includes(';')) {
-            // multi-value → colored badges
-            const wrap = document.createElement('div');
-            wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
-            valStr.split(';').forEach(v => {
-              const s = v.trim(); if (!s) return;
-              const b = document.createElement('span');
-              b.className = 'badge ' + badgeColor(s);
-              b.style.marginBottom = '2px';
-              b.textContent = s;
-              wrap.appendChild(b);
-            });
-            sec.appendChild(wrap);
           } else {
-            // single value — text + copy button
-            const pre = document.createElement('pre');
-            pre.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.6';
-            pre.textContent = valStr;
-            sec.appendChild(pre);
+            // Always split by ; and show badge(s) — whether 1 or many values
+            const isPlainText = col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)'||valStr.length>150;
+            if (isPlainText) {
+              const pre = document.createElement('pre');
+              pre.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.6';
+              pre.textContent = valStr;
+              sec.appendChild(pre);
+            } else {
+              const wrap = document.createElement('div');
+              wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+              valStr.split(';').forEach(v => {
+                const s = v.trim(); if (!s || s==='nan') return;
+                const b = document.createElement('span');
+                b.className = 'badge ' + badgeColor(s);
+                b.style.cssText = 'margin-bottom:2px;display:inline-block';
+                b.textContent = s;
+                wrap.appendChild(b);
+              });
+              sec.appendChild(wrap);
+            }
           }
           if (!empty) {
             const copyBtn = document.createElement('button');
