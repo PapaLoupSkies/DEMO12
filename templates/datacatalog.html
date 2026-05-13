@@ -3,9 +3,53 @@
 
 {% block extra_head %}
 <style>
-  
-  /* Section visibility */
+  /* View toggle */
+  .view-toggle-bar {
+    background: var(--white); border-bottom: 1px solid var(--border);
+    padding: 8px 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .view-toggle { display: flex; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px; gap: 2px; }
+  .vbtn { display: flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text-muted); font-family: 'Inter',sans-serif; transition: all .15s; white-space: nowrap; }
+  .vbtn.active { background: var(--white); color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 0.5px solid var(--border); }
+  .vbtn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .view-sep { width: 1px; height: 22px; background: var(--border); }
 
+  /* Section visibility */
+  #section-list { display: block; }
+  #section-card { display: none; }
+
+
+  /* Pagination */
+  .pagination-bar { display:flex; align-items:center; justify-content:center;
+    gap:16px; padding:10px 24px; border-top:1px solid var(--border); background:var(--white);
+    position:sticky; bottom:0; z-index:5; }
+  .pagination-info { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+  .pagination-info strong { color:var(--text); }
+  .pagination-btns { display:flex; gap:4px; }
+  .pg-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px;
+    background:var(--bg); font-size:12px; font-family:'Inter',sans-serif;
+    color:var(--text-muted); cursor:pointer; transition:all .15s; }
+  .pg-btn:hover:not(:disabled) { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+  .pg-btn:disabled { opacity:.4; cursor:default; }
+  .pg-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+  .pg-pages { display:flex; gap:3px; }
+
+  /* Search highlight */
+  mark { background:#fff3b0; color:var(--text); border-radius:2px; padding:0 2px; font-style:normal; }
+
+  /* Dynamic badge color palette */
+  .bc-0  { background:#e6f2f0; color:#0a5a4e; border-color:#b3d9d4; }
+  .bc-1  { background:#ede9fb; color:#3c3489; border-color:#d0c8f5; }
+  .bc-2  { background:#fdf3e0; color:#8a5e15; border-color:#e8c880; }
+  .bc-3  { background:#fdecea; color:#9c2a22; border-color:#f0b8b4; }
+  .bc-4  { background:#e8f5ee; color:#1a6b3c; border-color:#b3d9c4; }
+  .bc-5  { background:#e8f0fb; color:#1a3a8a; border-color:#b3c4e8; }
+  .bc-6  { background:#fce8f5; color:#8a1a6b; border-color:#e8b3d9; }
+  .bc-7  { background:#f0f5e8; color:#4a6b1a; border-color:#c4d9b3; }
+  .bc-8  { background:#e8f5f5; color:#1a6b6b; border-color:#b3d9d9; }
+  .bc-9  { background:#f5f0e8; color:#6b4a1a; border-color:#d9c4b3; }
+  .bc-10 { background:#f5e8f0; color:#6b1a4a; border-color:#d9b3c4; }
+  .bc-11 { background:#e8e8f5; color:#2a2a6b; border-color:#b3b3d9; }
   /* Cell expand */
   .cell-wrap { position: relative; }
   .cell-short { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -30,29 +74,40 @@
   .dd-filter-panel.open{display:block;}
   .dd-clear-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid #e0a0a0;background:none;color:var(--red);white-space:nowrap;}
   .dd-clear-btn:hover{background:#fdecea;}
+  .btn-report{background:#fdecea;color:var(--red);border:1px solid #f0b8b4;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .btn-report:hover{background:var(--red);color:#fff;border-color:var(--red);}
 </style>
 {% endblock %}
 
 {% block content %}
 
+
+
+{# ── SECTION LIST VIEW (existante) ── #}
+<div id="section-list">
 <div class="controls">
   <div class="search-wrap">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="search" placeholder="Search all content...">
   </div>
   <div id="dd-category-wrap" style="position:relative;display:inline-block">
-    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Category ▾</button>
+    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thematic ▾</button>
     <div class="dd-filter-panel" id="dd-category-panel"></div>
   </div>
-  <select id="sel-platform-cat" onchange="applyPlatformFilter()" style="padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:var(--bg);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
-    <option value="">All Platforms</option>
-  </select>
+  <div id="dd-entity-wrap" style="position:relative;display:inline-block">
+    <button class="dd-filter-btn" id="dd-entity-btn" onclick="toggleDd('entity')">Scope / Entity ▾</button>
+    <div class="dd-filter-panel" id="dd-entity-panel"></div>
+  </div>
+  <div id="dd-platform-wrap" style="position:relative;display:inline-block">
+    <button class="dd-filter-btn" id="dd-platform-btn" onclick="toggleDd('platform')">Platform ▾</button>
+    <div class="dd-filter-panel" id="dd-platform-panel"></div>
+  </div>
 
   <button class="dd-clear-btn" id="dd-clear-all" onclick="clearTopFilters()" style="display:none">✕ Clear</button>
   <select id="sort-col">
     <option value="ID">Sort by ID</option>
-    <option value="English Name">Sort by Name</option>
-    <option value="Content Category">Sort by Category</option>
+    <option value="Content Name (EN)">Sort by Name</option>
+    <option value="Primary Thematic">Sort by Thematic</option>
     <option value="Owner Team">Sort by Owner Team</option>
     <option value="List Name">Sort by List</option>
   </select>
@@ -60,7 +115,7 @@
     <option value="asc">Ascending</option>
     <option value="desc">Descending</option>
   </select>
-  <div class="count-badge">Results: <span id="result-count">—</span></div>
+  <div class="count-badge"><span id="result-count">—</span> résultat(s)</div>
 </div>
 
 <div class="active-col-filters" id="active-col-filters">
@@ -71,12 +126,21 @@
 
 <div class="table-wrap" id="table-wrap">
   <div class="loading" id="loading">Loading data...</div>
-  <div style="overflow-x:auto">
-  <table id="main-table" style="display:none">
+  <table id="main-table" style="display:none;min-width:1400px;">
     <thead><tr class="header-row" id="thead-row"></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
   <div class="no-results" id="no-results" style="display:none">No results found.</div>
+</div>
+
+
+<div class="pagination-bar" id="pagination-bar" style="display:none">
+  <div class="pagination-info" id="pg-info"></div>
+  <div class="pagination-btns">
+    <button class="pg-btn" id="pg-prev" onclick="goPage(currentPage-1)">← Préc.</button>
+    <div class="pg-pages" id="pg-pages"></div>
+    <button class="pg-btn" id="pg-next" onclick="goPage(currentPage+1)">Suiv. →</button>
+  </div>
 </div>
 
 <div class="modal-overlay" id="reuse-modal">
@@ -90,6 +154,28 @@
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>⚑ Report an Issue</h3>
+    <p id="report-modal-desc"></p>
+    <select id="report-reason" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;background:var(--bg);color:var(--text);outline:none;">
+      <option value="">Select a reason...</option>
+      <option value="Outdated content">Outdated content</option>
+      <option value="Incorrect information">Incorrect information</option>
+      <option value="Broken link">Broken link</option>
+      <option value="Missing information">Missing information</option>
+      <option value="Duplicate entry">Duplicate entry</option>
+      <option value="Other">Other</option>
+    </select>
+    <textarea id="report-message" placeholder="Additional details (optional)..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeReportModal()">Cancel</button>
+      <button class="btn-primary" style="background:var(--red);border-color:var(--red)" onclick="submitReport()">Send Report</button>
+    </div>
+  </div>
+</div>
+</div>{# fin #section-list #}
+
 
 {% endblock %}
 
@@ -97,74 +183,118 @@
 <script>
 const PLATFORM_VALUES = {{ platforms_json | safe }};
 let ALL_DATA=[], CUSTOMIZED_COLS={}, COMMON_COLS=[];
-let sortCol='ID', sortDir='asc';
+let sortCol='Primary Thematic', sortDir='asc';
 let expandedRows=new Set();
 let activeCategory='', activeList='';
 let colFilters={};
 let reuseTarget=null;
 
-const VISIBLE_COLS = ['ID','English Name','French Name','Content Category','Content Sub Category','Description','Owner Team','Contact Team'];
+// ── Pagination ──
+const PAGE_SIZE = 25;
+let currentPage = 1;
+
+
+
+// ── Debounce ──
+function debounce(fn, delay) {
+  let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+// ── Highlight search terms ──
+let _currentQ = '';
+function highlight(text, q) {
+  if (!q || !text || text === 'nan') return esc(String(text));
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return esc(String(text)).replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>');
+}
+
+// ── Consistent color for badge values (hash-based) ──
+function badgeColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
+  return 'bc-' + (h % 12);
+}
+function makeBadge(text, q, col='') {
+  const span = document.createElement('span');
+  span.className = 'badge ' + (col.startsWith('Content -') ? 'badge-team' : 'bc-5');
+  span.style.marginRight = '3px';
+  span.style.marginBottom = '2px';
+  span.innerHTML = highlight(text, q);
+  return span;
+}
+
+const VISIBLE_COLS = [
+  'Primary Thematic','Platform','Content Family','Content Types',
+  'Content Name (EN)','Content Name (FR)','Content Description',
+  'Content Published Link','Owner Team','Author Team','Contact Team',
+  'Published Date','Last Update Date'
+];
 
 // Sets de sélection — déclarés AVANT loadData
 let selectedCategories = new Set();
+let selectedEntities = new Set();
 let selectedLists = new Set();
 let selectedPlatforms = new Set();
 
 // Peupler le panel Platform immédiatement (données disponibles dès le chargement)
-function initPlatformPanel() {
-  // Peupler le select Platform
-  const sel = document.getElementById('sel-platform-cat');
-  PLATFORM_VALUES.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    sel.appendChild(opt);
-  });
-}
+function initPlatformPanel() { /* handled by buildChips */ }
 
-function applyPlatformFilter() {
-  expandedRows.clear();
-  render();
-}
 
-function updatePlatformOptions() {
-  // Recalculer les plateformes disponibles selon les filtres actifs (hors Platform)
+function getRowsExcluding(excludeType) {
   const q = document.getElementById('search').value.toLowerCase().trim();
-  const relevant = ALL_DATA.filter(r => {
-    if(selectedCategories.size > 0){
-      const cats = (r['Content Category']||'').split(';').map(s=>s.trim());
+  return ALL_DATA.filter(r => {
+    if(excludeType !== 'category' && selectedCategories.size > 0){
+      const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
       if(!cats.some(c=>selectedCategories.has(c))) return false;
     }
-    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    if(excludeType !== 'entity' && selectedEntities.size > 0){
+      if(!selectedEntities.has(r['Owner Team'])) return false;
+    }
+    if(excludeType !== 'platform' && selectedPlatforms.size > 0){
+      const plats = (r['Platform']||'').split(';').map(s=>s.trim());
+      if(!plats.some(p=>selectedPlatforms.has(p))) return false;
+    }
+    if(q && !Object.values(r).join(' ').toLowerCase().includes(q)) return false;
     return true;
   });
-  const availPlats = new Set();
-  relevant.forEach(r => (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) availPlats.add(p); }));
-  
-  const sel = document.getElementById('sel-platform-cat');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Platforms</option>';
-  [...availPlats].sort().forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    if(p === current) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  // Si la valeur courante n'est plus disponible, reset
-  if(current && !availPlats.has(current)){
-    sel.value = '';
-    expandedRows.clear();
-    render();
-  }
 }
 
+function updateAllFilters() {
+  // Thématiques disponibles
+  const availCats = new Set();
+  getRowsExcluding('category').forEach(r =>
+    (r['Primary Thematic']||'').split(';').forEach(c=>{ c=c.trim(); if(c) availCats.add(c); })
+  );
+  selectedCategories.forEach(c => { if(!availCats.has(c)) selectedCategories.delete(c); });
+  buildDdPanel('category', [...availCats].sort(), selectedCategories);
+  updateDdBtn('category', selectedCategories);
+
+  // Entités disponibles
+  const availEnts = new Set();
+  getRowsExcluding('entity').forEach(r => { if(r['Owner Team']) availEnts.add(r['Owner Team']); });
+  selectedEntities.forEach(e => { if(!availEnts.has(e)) selectedEntities.delete(e); });
+  buildDdPanel('entity', [...availEnts].sort(), selectedEntities);
+  updateDdBtn('entity', selectedEntities);
+
+  // Plateformes disponibles
+  const availPlats = new Set();
+  getRowsExcluding('platform').forEach(r =>
+    (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) availPlats.add(p); })
+  );
+  selectedPlatforms.forEach(p => { if(!availPlats.has(p)) selectedPlatforms.delete(p); });
+  buildDdPanel('platform', [...availPlats].sort(), selectedPlatforms);
+  updateDdBtn('platform', selectedPlatforms);
+}
+
+function updatePlatformOptions() { updateAllFilters(); }
+
 async function loadData() {
-  const res = await fetch('/api/catalog');
+  const res = await fetch('/api/datacatalog');
   const json = await res.json();
   ALL_DATA=json.rows; CUSTOMIZED_COLS=json.custom_cols||{}; COMMON_COLS=json.common_cols||[];
   buildChips();
   document.getElementById('loading').style.display='none';
   document.getElementById('main-table').style.display='';
-  buildHeader(); render(); setTableHeight();
+  buildHeader(); updateAllFilters(); render(); setTableHeight();
 }
 
 // (Sets déjà déclarés en haut)
@@ -172,10 +302,16 @@ async function loadData() {
 function buildChips() {
   // Collecter les catégories uniques (split multi-valeurs)
   const allCats = new Set();
-  ALL_DATA.forEach(r => (r['Content Category']||'').split(';').map(s=>s.trim()).filter(Boolean).forEach(c=>allCats.add(c)));
+  ALL_DATA.forEach(r => (r['Primary Thematic']||'').split(';').map(s=>s.trim()).filter(Boolean).forEach(c=>allCats.add(c)));
   buildDdPanel('category', [...allCats].sort(), selectedCategories);
+  // Entités
+  const allEntities = new Set();
+  ALL_DATA.forEach(r => { if(r['Owner Team']) allEntities.add(r['Owner Team']); });
+  buildDdPanel('entity', [...allEntities].sort(), selectedEntities);
   // Plateformes
-
+  const allPlats = new Set();
+  ALL_DATA.forEach(r => (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) allPlats.add(p); }));
+  buildDdPanel('platform', [...allPlats].sort(), selectedPlatforms);
 }
 
 function buildDdPanel(type, values, selected) {
@@ -226,42 +362,50 @@ function buildDdPanel(type, values, selected) {
 }
 
 function applyDdFilter(type, selected) {
+  const setMap = {category: selectedCategories, entity: selectedEntities, list: selectedLists, platform: selectedPlatforms};
+  const resolvedSet = setMap[type] || selected;
   const panel = document.getElementById('dd-'+type+'-panel');
   const checked = [...panel.querySelectorAll('.dd-item input:checked')].map(cb=>cb.value);
-  selected.clear();
-  checked.forEach(v => selected.add(v));
-  updateDdBtn(type, selected);
-  document.getElementById('dd-clear-all').style.display = selectedCategories.size ? '' : 'none';
-  updatePlatformOptions();
+  resolvedSet.clear();
+  checked.forEach(v => resolvedSet.add(v));
+  const selected2 = resolvedSet;
+  updateDdBtn(type, resolvedSet);
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size||selectedPlatforms.size) ? '' : 'none';
+  updateAllFilters();
   expandedRows.clear(); render();
 }
 
 function clearDd(type) {
-  const sel = type==='category' ? selectedCategories : (type==='platform' ? selectedPlatforms : selectedLists);
+  const sel = type==='category' ? selectedCategories : type==='entity' ? selectedEntities : (type==='platform' ? selectedPlatforms : selectedLists);
   sel.clear();
   const panel = document.getElementById('dd-'+type+'-panel');
   panel.querySelectorAll('.dd-item input').forEach(cb => cb.checked = false);
   updateDdBtn(type, sel);
-  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedPlatforms.size) ? '' : 'none';
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size||selectedPlatforms.size) ? '' : 'none';
   expandedRows.clear(); render();
 }
 
 function clearTopFilters() {
   selectedCategories.clear();
-  // Reset Category dropdown
+  selectedEntities.clear();
   const catPanel = document.getElementById('dd-category-panel');
   if(catPanel) catPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
   updateDdBtn('category', new Set());
-  // Reset Platform select
-  document.getElementById('sel-platform-cat').value = '';
-  updatePlatformOptions();
+  const entPanel = document.getElementById('dd-entity-panel');
+  if(entPanel) entPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateDdBtn('entity', new Set());
+  selectedPlatforms.clear();
+  const platPanel = document.getElementById('dd-platform-panel');
+  if(platPanel) platPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateDdBtn('platform', new Set());
+  updateAllFilters();
   document.getElementById('dd-clear-all').style.display = 'none';
   expandedRows.clear(); render();
 }
 
 function updateDdBtn(type, selected) {
   const btn = document.getElementById('dd-'+type+'-btn');
-  const labels = {'category':'Category','list':'List','platform':'Platform'};
+  const labels = {'category':'Thematic','entity':'Scope / Entity','list':'List','platform':'Platform'};
   const label = labels[type] || type;
   if (selected.size > 0) {
     btn.classList.add('active');
@@ -283,7 +427,7 @@ function toggleDd(type) {
 
 // Fermer les dropdowns si clic ailleurs
 document.addEventListener('click', e => {
-  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-list-wrap')) {
+  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-entity-wrap') && !e.target.closest('#dd-platform-wrap') && !e.target.closest('#dd-list-wrap')) {
     document.querySelectorAll('.dd-filter-panel').forEach(p => p.classList.remove('open'));
   }
 });
@@ -305,12 +449,11 @@ function buildHeader() {
     </div>`;
     tr.appendChild(th);
   });
-  // Extra cols header
+  // Extra cols (Reuse + Specific cols buttons)
   tr.innerHTML += `
-    <th style="background:var(--bg)"><div class="th-inner"><span class="th-label">List</span></div></th>
-    <th style="background:var(--bg)"><div class="th-inner"><span class="th-label">🔗 Lien</span></div></th>
     <th style="background:var(--bg)"></th>
     <th style="background:var(--bg)"></th>`;
+  if(!sortCol) sortCol = VISIBLE_COLS[0];
 }
 
 function openColFilter(e,col,iconEl){
@@ -347,17 +490,20 @@ function clearAllColFilters(){colFilters={};updateActiveFiltersBar();buildHeader
 
 function getFiltered(){
   const q = document.getElementById('search').value.toLowerCase().trim();
-  const platVal = document.getElementById('sel-platform-cat').value;
   return ALL_DATA.filter(r=>{
-    // Filtre Platform (select simple)
-    if(platVal){
+    // Filtre Platform (multi-select)
+    if(selectedPlatforms.size > 0){
       const plats = (r['Platform']||'').split(';').map(s=>s.trim());
-      if(!plats.includes(platVal)) return false;
+      if(!plats.some(p=>selectedPlatforms.has(p))) return false;
     }
-    // Filtre Category (dropdown multi-select)
+    // Filtre Category
     if(selectedCategories.size > 0){
-      const cats = (r['Content Category']||'').split(';').map(s=>s.trim());
+      const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
       if(!cats.some(c=>selectedCategories.has(c))) return false;
+    }
+    // Filtre Entités (Owner Team)
+    if(selectedEntities.size > 0){
+      if(!selectedEntities.has(r['Owner Team'])) return false;
     }
     // Recherche textuelle
     if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
@@ -399,82 +545,112 @@ function copyCell(btn, text) {
     .then(()=>{ btn.textContent='✓ Copied'; btn.classList.add('copied'); setTimeout(()=>{btn.textContent='⎘ Copy';btn.classList.remove('copied');},1500); });
 }
 
+function goPage(p) {
+  const total = Math.ceil(_lastFiltered.length / PAGE_SIZE);
+  currentPage = Math.max(1, Math.min(p, total || 1));
+  renderPage(_lastFiltered);
+}
+
+let _lastFiltered = [];
+
 function render(){
   setTimeout(setTableHeight, 50);
   let data=getFiltered();
   data.sort((a,b)=>{let va=String(a[sortCol]??'').toLowerCase(),vb=String(b[sortCol]??'').toLowerCase();return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;});
-  document.getElementById('result-count').textContent=data.length;
-  document.getElementById('no-results').style.display=data.length===0?'block':'none';
-  document.getElementById('main-table').style.display=data.length===0?'none':'';
-  const tbody=document.getElementById('tbody');tbody.innerHTML='';
+  _lastFiltered = data;
+  currentPage = 1;
+  renderPage(data);
+}
 
-  data.forEach(row=>{
-    const uid=(row.ID||row['English Name'])+'_'+row['List Name'];
+function renderPage(data) {
+  const total = data.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
+  const start = (currentPage-1)*PAGE_SIZE;
+  const pageData = data.slice(start, start+PAGE_SIZE);
+
+  document.getElementById('result-count').textContent=total;
+  document.getElementById('no-results').style.display=total===0?'block':'none';
+  document.getElementById('main-table').style.display=total===0?'none':'';
+
+  // Pagination UI
+  const bar=document.getElementById('pagination-bar');
+  bar.style.display=total>0?'flex':'none';
+  document.getElementById('pg-info').innerHTML=`Affichage <strong>${start+1}–${Math.min(start+PAGE_SIZE,total)}</strong> sur <strong>${total}</strong>`;
+  document.getElementById('pg-prev').disabled=currentPage<=1;
+  document.getElementById('pg-next').disabled=currentPage>=totalPages;
+  // Page numbers (max 5 shown)
+  const pgs=document.getElementById('pg-pages'); pgs.innerHTML='';
+  let s=Math.max(1,currentPage-2), e=Math.min(totalPages,s+4); s=Math.max(1,e-4);
+  for(let i=s;i<=e;i++){
+    const b=document.createElement('button'); b.className='pg-btn'+(i===currentPage?' active':'');
+    b.textContent=i; b.onclick=(()=>{const p=i;return()=>goPage(p);})(); pgs.appendChild(b);
+  }
+
+  const tbody=document.getElementById('tbody');tbody.innerHTML='';
+  const slicedData = pageData; // use paged slice below
+
+  slicedData.forEach(row=>{
+    const uid=(row.ID||row['Content Name (EN)']||row['Doc Name (EN)']||'')+'_'+(row['List Name']||'');
     const isExp=expandedRows.has(uid);
-    const cl=(row.Classification||'').toLowerCase();
     const tr=document.createElement('tr'); if(isExp)tr.classList.add('expanded');
 
-    // ID cell
-    const tdId=document.createElement('td'); tdId.className='col-id'; tdId.textContent=row.ID||'—'; tr.appendChild(tdId);
+    // ── Dynamic columns from VISIBLE_COLS ──
+    const _q = document.getElementById('search').value.toLowerCase().trim();
+    VISIBLE_COLS.forEach(col=>{
+      const val=row[col]??'';
+      const td=document.createElement('td');
+      const strVal=String(val);
 
-    // English Name (with link if available)
-    const tdName=document.createElement('td'); tdName.className='col-name';
-    tdName.style.maxWidth='220px';
-    if(row['Published Links']){
-      const a=document.createElement('a'); a.href=row['Published Links']; a.target='_blank'; a.textContent=row['English Name']||'—'; tdName.appendChild(a);
-    } else { tdName.textContent=row['English Name']||'—'; }
-    tr.appendChild(tdName);
+      // ── Column type detection ──
+      const isLink    = (col==='Content Published Link'||col==='Doc Published Link'||col==='Lien_url') && /^https?:\/\//.test(strVal);
+      const isDate    = /^\d{4}-\d{2}-\d{2}/.test(strVal) && (col.toLowerCase().includes('date'));
+      const isContentMeta = col.startsWith('Content -');
+      const isLongTxt = !isContentMeta && (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)');
+      const isEmpty   = !strVal || strVal==='nan';
 
-    // French Name
-    const tdFr=makeCell(row['French Name'],2); tdFr.style.maxWidth='180px'; tdFr.style.fontSize='12px'; tdFr.style.color='var(--text-muted)'; tr.appendChild(tdFr);
+      if(isEmpty){
+        td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+      }
+      // Link
+      else if(isLink){
+        const a=document.createElement('a'); a.href=strVal; a.target='_blank'; a.rel='noopener noreferrer';
+        a.style.cssText='display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--accent);font-weight:600;';
+        a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Ouvrir';
+        td.appendChild(a);
+      }
+      // Date
+      else if(isDate){
+        try {
+          const d = new Date(strVal);
+          const fmt = d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+          td.innerHTML = '<span style="font-size:11px;color:var(--text-muted)">📅 '+highlight(fmt,_q)+'</span>';
+        } catch(e) { td.innerHTML=highlight(strVal,_q); }
+      }
+      // Long / plain text columns
+      else if(!isContentMeta && (isLongTxt || strVal.length>80)){
+        const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
+      }
+      // Everything else → always badge(s), split by ;
+      else {
+        const parts = strVal.split(';').map(v=>v.trim()).filter(v=>v&&v!=='nan');
+        if(parts.length===0){
+          td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
+        } else {
+          parts.forEach(v=>{ td.appendChild(makeBadge(v, _q, col)); });
+        }
+      }
 
-    // Content Category — may have multiple values separated by ;
-    const tdCat=document.createElement('td');
-    if(row['Content Category']){
-      row['Content Category'].split(';').forEach(c=>{
-        const b=document.createElement('span'); b.className='badge badge-category'; b.textContent=c.trim(); b.style.marginRight='2px'; tdCat.appendChild(b);
-      });
-    } else { tdCat.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>'; }
-    tr.appendChild(tdCat);
-
-    // Content Sub Category
-    const tdSub=document.createElement('td');
-    tdSub.innerHTML=`<span class="badge badge-list">${esc(row['Content Sub Category']||'—')}</span>`; tr.appendChild(tdSub);
-
-    // Description
-    const tdDesc=makeCell(row['Description'],3); tdDesc.style.maxWidth='200px'; tr.appendChild(tdDesc);
-
-    // Owner Team
-    const tdOwner=document.createElement('td');
-    tdOwner.innerHTML=`<span class="badge badge-team">${esc(row['Owner Team']||'—')}</span>`; tr.appendChild(tdOwner);
-
-    // Contact Team
-    const tdContact=document.createElement('td'); tdContact.style.fontSize='12px'; tdContact.style.color='var(--text-muted)'; tdContact.textContent=row['Contact Team']||'—'; tr.appendChild(tdContact);
-
-    // List Name
-    const tdList=document.createElement('td');
-    tdList.innerHTML=`<span class="badge" style="background:#f0f0ec;border:1px solid var(--border);color:var(--text-muted)">${esc(row['List Name'])}</span>`; tr.appendChild(tdList);
-
-    // Lien_url
-    const tdUrl=document.createElement('td'); tdUrl.style.textAlign='center';
-    if(row['Lien_url']){
-      const a=document.createElement('a');
-      a.href=row['Lien_url']; a.target='_blank'; a.rel='noopener noreferrer';
-      a.title=row['Lien_url'];
-      a.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:middle;color:var(--accent)"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
-      a.style.cssText='display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--accent-light);text-decoration:none;transition:all .15s;';
-      a.onmouseenter=()=>{ a.style.borderColor='var(--accent)'; a.style.background='var(--accent)'; a.querySelector('svg').style.color='#fff'; };
-      a.onmouseleave=()=>{ a.style.borderColor='var(--border)'; a.style.background='var(--accent-light)'; a.querySelector('svg').style.color='var(--accent)'; };
-      tdUrl.appendChild(a);
-    } else {
-      tdUrl.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
-    }
-    tr.appendChild(tdUrl);
+      tr.appendChild(td);
+    });
 
     // Reuse button
     const tdReuse=document.createElement('td');
     const btnReuse=document.createElement('button'); btnReuse.className='btn-sm btn-reuse'; btnReuse.textContent='♻️ Reuse';
     btnReuse.onclick=(e)=>{e.stopPropagation();openReuseModal(row);}; tdReuse.appendChild(btnReuse); tr.appendChild(tdReuse);
+
+    const tdReport=document.createElement('td');
+    const btnReport=document.createElement('button'); btnReport.className='btn-report'; btnReport.textContent='⚑ Report';
+    btnReport.onclick=(e)=>{e.stopPropagation();openReportModal(row);}; tdReport.appendChild(btnReport); tr.appendChild(tdReport);
 
     // Metadata button
     const tdMeta=document.createElement('td');
@@ -483,9 +659,12 @@ function render(){
 
     tbody.appendChild(tr);
 
-    // Expanded detail row — customized columns
+    // Expanded detail row — all columns NOT in VISIBLE_COLS
     if(isExp){
-      const customCols = CUSTOMIZED_COLS[row['List Name']] || [];
+      const visSet = new Set(VISIBLE_COLS);
+      const customCols = Object.keys(row).filter(k =>
+        !visSet.has(k) && k !== 'List Name' && row[k] !== '' && row[k] !== 'nan' && row[k] !== null && row[k] !== undefined
+      );
       const dtr = document.createElement('tr'); dtr.className = 'detail-row';
       const dtd = document.createElement('td'); dtd.colSpan = VISIBLE_COLS.length + 3;
       if (!customCols.length) {
@@ -498,8 +677,36 @@ function render(){
           const valStr = empty ? '' : String(v);
           const sec = document.createElement('div');
           sec.className = 'detail-section';
-          sec.innerHTML = '<h4>' + esc(col) + '</h4>' +
-            '<pre>' + (empty ? '<span style="color:var(--text-muted);font-style:italic">—</span>' : esc(valStr)) + '</pre>';
+          const titleEl = document.createElement('h4');
+          titleEl.textContent = col;
+          sec.appendChild(titleEl);
+          if (empty) {
+            const dash = document.createElement('span');
+            dash.style.cssText = 'color:var(--text-muted);font-style:italic;font-size:12px';
+            dash.textContent = '—';
+            sec.appendChild(dash);
+          } else {
+            // Always split by ; and show badge(s) — whether 1 or many values
+            const isPlainText = !col.startsWith('Content -') && (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)'||valStr.length>150);
+            if (isPlainText) {
+              const pre = document.createElement('pre');
+              pre.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.6';
+              pre.textContent = valStr;
+              sec.appendChild(pre);
+            } else {
+              const wrap = document.createElement('div');
+              wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+              valStr.split(';').forEach(v => {
+                const s = v.trim(); if (!s || s==='nan') return;
+                const b = document.createElement('span');
+                b.className = 'badge ' + (col.startsWith('Content -') ? 'badge-team' : 'bc-5');
+                b.style.cssText = 'margin-bottom:2px;display:inline-block';
+                b.textContent = s;
+                wrap.appendChild(b);
+              });
+              sec.appendChild(wrap);
+            }
+          }
           if (!empty) {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'cell-copy'; copyBtn.textContent = '⎘ Copy';
@@ -523,7 +730,7 @@ function toggle(id,e){e.stopPropagation();expandedRows.has(id)?expandedRows.dele
 
 function openReuseModal(row){
   reuseTarget=row;
-  document.getElementById('reuse-modal-desc').textContent=`"${row['English Name']}" (Owner: ${row['Owner Team']||'?'})`;
+  document.getElementById('reuse-modal-desc').textContent=`"${row['Content Name (EN)']||row['Doc Name (EN)']||row['ID']||'?'}" (Owner: ${row['Owner Team']||'?'})`;
   document.getElementById('reuse-message').value='';
   document.getElementById('reuse-modal').classList.add('open');
 }
@@ -531,12 +738,12 @@ function closeReuseModal(){document.getElementById('reuse-modal').classList.remo
 async function submitReuse(){
   if(!reuseTarget)return;
   await fetch('/api/reuse-request',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({content_id:reuseTarget.ID||reuseTarget['English Name'],content_name:reuseTarget['English Name'],list_name:reuseTarget['List Name'],owner_team:reuseTarget['Owner Team'],message:document.getElementById('reuse-message').value})
+    body:JSON.stringify({content_id:reuseTarget.ID||reuseTarget['Content Name (EN)']||reuseTarget['Doc Name (EN)']||reuseTarget['ID'],content_name:reuseTarget['Content Name (EN)']||reuseTarget['Doc Name (EN)']||reuseTarget['ID'],list_name:reuseTarget['List Name'],owner_team:reuseTarget['Owner Team'],message:document.getElementById('reuse-message').value})
   });
   closeReuseModal();alert('✅ Reuse request sent!');
 }
 
-document.getElementById('search').addEventListener('input',()=>{expandedRows.clear();render();});
+document.getElementById('search').addEventListener('input', debounce(()=>{expandedRows.clear();updateAllFilters();render();}, 300));
 document.getElementById('sort-col').addEventListener('change',e=>{sortCol=e.target.value;buildHeader();render();});
 document.getElementById('sort-dir').addEventListener('change',e=>{sortDir=e.target.value;buildHeader();render();});
 document.getElementById('reuse-modal').addEventListener('click',closeReuseModal);
@@ -553,6 +760,41 @@ function setTableHeight() {
   wrap.style.height = (window.innerHeight - top - pgH - 8) + 'px';
 }
 window.addEventListener('resize', setTableHeight);
+
+
+// ── Report modal ──
+let reportTarget = null;
+function openReportModal(row) {
+  reportTarget = row;
+  document.getElementById('report-modal-desc').textContent =
+    '"' + (row['Content Name (EN)']||row['Doc Name (EN)']||row['ID']||'?') + '" (Owner: ' + (row['Owner Team']||'?') + ')';
+  document.getElementById('report-reason').value = '';
+  document.getElementById('report-message').value = '';
+  document.getElementById('report-modal').classList.add('open');
+}
+function closeReportModal() {
+  document.getElementById('report-modal').classList.remove('open');
+  reportTarget = null;
+}
+async function submitReport() {
+  if (!reportTarget) return;
+  const reason = document.getElementById('report-reason').value;
+  if (!reason) { alert('Please select a reason.'); return; }
+  await fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      content_id:   reportTarget.ID || reportTarget['Content Name (EN)'],
+      content_name: reportTarget['Content Name (EN)'] || reportTarget['Doc Name (EN)'],
+      owner_team:   reportTarget['Owner Team'],
+      reason:       reason,
+      message:      document.getElementById('report-message').value
+    })
+  });
+  closeReportModal();
+  alert('✅ Report sent!');
+}
+document.getElementById('report-modal').addEventListener('click', closeReportModal);
 
 
 </script>

@@ -84,6 +84,16 @@ def load_doc_catalog():
     df["List Name"] = "Document Hub"
     return df.to_dict("records")
 
+def load_data_catalog():
+    """Load Data Catalog data from business_glossary.csv"""
+    path = f"{CD}/business_glossary.csv"
+    if not os.path.exists(path):
+        return []
+    df = csv_read(path)
+    if df.empty: return []
+    df["List Name"] = "Data Catalog"
+    return df.to_dict("records")
+
 def get_custom_cols(rows):
     result = {}
     for row in rows:
@@ -149,18 +159,20 @@ def ctx():
     if not u: return {}
     try:
         all_rows      = load_all_catalog()
-        catalog_count = len(all_rows)
-        doc_count     = len(load_doc_catalog())
+        catalog_count      = len(all_rows)
+        doc_count          = len(load_doc_catalog())
+        data_catalog_count = len(load_data_catalog())
         emp_count     = len(csv_read(f"{MD}/employees.csv"))
         faq_count     = len(csv_read(f"{PD}/faq.csv"))
         ev_count      = len(csv_read(f"{PD}/events.csv"))
     except:
-        catalog_count = emp_count = faq_count = ev_count = doc_count = 0
+        catalog_count = emp_count = faq_count = ev_count = doc_count = data_catalog_count = 0
     return {
         "user": u,
         "notif_count": notif_count(u),
-        "catalog_count": catalog_count,
-        "doc_count": doc_count,
+        "catalog_count":      catalog_count,
+        "doc_count":          doc_count,
+        "data_catalog_count": data_catalog_count,
         "emp_count": emp_count,
         "faq_count": faq_count,
         "ev_count": ev_count,
@@ -233,14 +245,14 @@ def kanban():
 @login_required
 def datacatalog():
     import json as _json
-    rows = load_all_catalog()
+    rows = load_data_catalog()
     plats = sorted(set(
         p.strip() for r in rows
         for p in str(r.get("Platform","")).split(";") if p.strip()
     ))
-    dates      = sorted([r.get("Date de publication","") for r in rows if r.get("Date de publication","")])
+    dates      = sorted([r.get("Published Date","") for r in rows if r.get("Published Date","")])
     teams      = sorted(set(str(r.get("Owner Team","")) for r in rows if r.get("Owner Team","")))
-    categories = sorted(set(str(r.get("Content Category","")) for r in rows if r.get("Content Category","")))
+    categories = sorted(set(str(r.get("Category","")) for r in rows if r.get("Category","")))
     return render_template("datacatalog.html",
         platforms_json  = _json.dumps(plats),
         rows_json       = _json.dumps(clean(rows)),
@@ -343,6 +355,27 @@ def api_notifications_clear():
     session["notif_count"]   = 0
     return jsonify({"ok": True})
 
+@app.route("/api/report", methods=["POST"])
+@login_required
+def api_report():
+    import datetime
+    data = request.get_json(silent=True) or {}
+    u    = cur_user()
+    notif = {
+        "id":      f"report_{int(datetime.datetime.now().timestamp()*1000)}",
+        "type":    "report",
+        "message": f"⚑ Report on « {data.get('content_name','?')} » — {data.get('reason','?')} (Team: {data.get('owner_team','?')})",
+        "from":    u.get("username","?"),
+        "ts":      datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "note":    data.get("message",""),
+    }
+    notifs = session.get("notifications", [])
+    notifs.insert(0, notif)
+    session["notifications"] = notifs[:20]
+    session["notif_count"]   = len(notifs)
+    session.modified = True
+    return jsonify({"ok": True})
+
 @app.route("/api/reuse-request", methods=["POST"])
 @login_required
 def api_reuse_request():
@@ -381,6 +414,16 @@ def api_dochub():
     return jsonify({
         "rows": clean(rows),
         "common_cols": COMMON_COLS_DOC,
+        "custom_cols": get_custom_cols(rows)
+    })
+
+@app.route("/api/datacatalog")
+@login_required
+def api_datacatalog():
+    rows = load_data_catalog()
+    return jsonify({
+        "rows": clean(rows),
+        "common_cols": COMMON_COLS,
         "custom_cols": get_custom_cols(rows)
     })
 

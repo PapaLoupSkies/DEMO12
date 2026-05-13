@@ -140,6 +140,8 @@
     transition: all .15s; font-family: 'Inter',sans-serif;
   }
   .kb-card-more:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+  .kb-card-report { flex:1; display:flex; align-items:center; justify-content:center; gap:4px; font-size:10px; font-weight:700; color:#9c2a22; background:#fdecea; border:1.5px solid #f0b8b4; border-radius:6px; padding:5px 8px; cursor:pointer; transition:all .15s; font-family:'Inter',sans-serif; }
+  .kb-card-report:hover { background:var(--red); color:#fff; border-color:var(--red); }
   .kb-card-reuse {
     flex: 1; display: flex; align-items: center; justify-content: center; gap: 5px;
     font-size: 11px; font-weight: 700; color: #b07d2a;
@@ -225,13 +227,13 @@
     <div class="entity-filter-wrap" id="entity-wrap">
       <div class="entity-filter-btn" id="entity-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;flex-shrink:0"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
-        Entités
+        Scope / Entity
         <span class="entity-badge" id="entity-badge">0</span>
         <svg class="entity-chevron" id="entity-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
       </div>
       <div class="entity-panel" id="entity-panel">
         <div class="entity-panel-hdr">
-          <span class="entity-panel-hdr-title">Entités</span>
+          <span class="entity-panel-hdr-title">Scope / Entity</span>
           <div class="entity-panel-actions">
             <button id="btn-all">Tout</button>
             <button id="btn-none">Aucun</button>
@@ -290,7 +292,7 @@
         <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="10" rx="1"/>
       </svg>
       <p>Merci de choisir les entités souhaitées</p>
-      <span>Utilisez le filtre <strong>Entités</strong> pour afficher les colonnes.</span>
+      <span>Utilisez le filtre <strong>Scope / Entity</strong> pour afficher les colonnes.</span>
     </div>
     <div class="kb-no-results" id="kb-no-results" style="display:none">Aucun résultat pour ces critères.</div>
   </div>
@@ -304,6 +306,28 @@
       <div class="modal-actions">
         <button class="btn-cancel" id="kb-reuse-cancel">Cancel</button>
         <button class="btn-primary" id="kb-reuse-submit">Send Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Report Card View ── -->
+  <div class="modal-overlay" id="kb-report-modal">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>⚑ Report an Issue</h3>
+      <p id="kb-report-modal-desc"></p>
+      <select id="kb-report-reason" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;background:var(--bg);color:var(--text);outline:none;">
+        <option value="">Select a reason...</option>
+        <option value="Outdated content">Outdated content</option>
+        <option value="Incorrect information">Incorrect information</option>
+        <option value="Broken link">Broken link</option>
+        <option value="Missing information">Missing information</option>
+        <option value="Duplicate entry">Duplicate entry</option>
+        <option value="Other">Other</option>
+      </select>
+      <textarea id="kb-report-message" placeholder="Additional details (optional)..."></textarea>
+      <div class="modal-actions">
+        <button class="btn-cancel" id="kb-report-cancel">Cancel</button>
+        <button class="btn-primary" style="background:var(--red);border-color:var(--red)" id="kb-report-submit">Send Report</button>
       </div>
     </div>
   </div>
@@ -536,6 +560,9 @@ function renderBoard(){
   board.querySelectorAll(".kb-card-reuse").forEach(btn=>{
     btn.addEventListener("click",e=>{ e.stopPropagation(); openReuseModal(CARD_DATA[+btn.dataset.idx]); });
   });
+  board.querySelectorAll(".kb-card-report").forEach(btn=>{
+    btn.addEventListener("click",e=>{ e.stopPropagation(); openKbReportModal(CARD_DATA[+btn.dataset.idx]); });
+  });
 }
 
 // ── Global card data store (évite l'encodage JSON dans les attributs HTML) ──
@@ -564,7 +591,7 @@ function cardHtml(r){
     +footer
     +"<div class='kb-card-btns'>"
       +"<button class='kb-card-more' data-idx='"+idx+"'>&#9432; Détails</button>"
-      +"<button class='kb-card-reuse' data-idx='"+idx+"'>&#9851; Reuse</button>"
+      +"<button class='kb-card-reuse' data-idx='"+idx+"'>&#9851; Reuse</button>"      +"<button class='kb-card-report' data-idx='"+idx+"'>&#9873; Report</button>"
     +"</div>"
   +"</div>";
 }
@@ -663,6 +690,40 @@ document.getElementById("kb-reuse-submit").addEventListener("click", async ()=>{
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
 
 // ── Init (appelé par switchView) ──
+// ── Report modal ──
+let kbReportTarget = null;
+function openKbReportModal(r) {
+  kbReportTarget = r;
+  document.getElementById('kb-report-modal-desc').textContent =
+    '"' + (r["Content Name (EN)"]||r["Content Name (FR)"]||r["ID"]||'?') + '" (Owner: ' + (r["Owner Team"]||'?') + ')';
+  document.getElementById('kb-report-reason').value = '';
+  document.getElementById('kb-report-message').value = '';
+  document.getElementById('kb-report-modal').classList.add('open');
+}
+function closeKbReportModal() {
+  document.getElementById('kb-report-modal').classList.remove('open');
+  kbReportTarget = null;
+}
+async function submitKbReport() {
+  if (!kbReportTarget) return;
+  const reason = document.getElementById('kb-report-reason').value;
+  if (!reason) { alert('Please select a reason.'); return; }
+  await fetch('/api/report', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({
+      content_id:   kbReportTarget.ID,
+      content_name: kbReportTarget["Content Name (EN)"]||kbReportTarget["Content Name (FR)"],
+      owner_team:   kbReportTarget["Owner Team"],
+      reason:       reason,
+      message:      document.getElementById('kb-report-message').value
+    })
+  });
+  closeKbReportModal(); alert('✅ Report sent!');
+}
+document.getElementById('kb-report-cancel').addEventListener('click', closeKbReportModal);
+document.getElementById('kb-report-submit').addEventListener('click', submitKbReport);
+document.getElementById('kb-report-modal').addEventListener('click', e => { if(e.target===document.getElementById('kb-report-modal')) closeKbReportModal(); });
+
 // ── Expose functions called from inline HTML attributes ──
 window.kbInit          = function(){ initAxis(); syncSlider(); buildEntityList(); renderBoard(); };
 window.renderBoard     = renderBoard;
@@ -675,5 +736,6 @@ window.openModal       = openModal;
 window.closeModal      = closeModal;
 window.openReuseModal  = openReuseModal;
 window.closeReuseModal = closeReuseModal;
+window.openKbReportModal = openKbReportModal;
 })();
 </script>

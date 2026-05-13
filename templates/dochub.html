@@ -62,7 +62,29 @@
   .dd-filter-panel.open{display:block;}
   .dd-clear-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid #e0a0a0;background:none;color:var(--red);white-space:nowrap;}
   .dd-clear-btn:hover{background:#fdecea;}
+  .btn-report{background:#fdecea;color:var(--red);border:1px solid #f0b8b4;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .btn-report:hover{background:var(--red);color:#fff;border-color:var(--red);}
 </style>
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>⚑ Report an Issue</h3>
+    <p id="report-modal-desc"></p>
+    <select id="report-reason" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;background:var(--bg);color:var(--text);outline:none;">
+      <option value="">Select a reason...</option>
+      <option value="Outdated content">Outdated content</option>
+      <option value="Incorrect information">Incorrect information</option>
+      <option value="Broken link">Broken link</option>
+      <option value="Missing information">Missing information</option>
+      <option value="Duplicate entry">Duplicate entry</option>
+      <option value="Other">Other</option>
+    </select>
+    <textarea id="report-message" placeholder="Additional details (optional)..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeReportModal()">Cancel</button>
+      <button class="btn-primary" style="background:var(--red);border-color:var(--red)" onclick="submitReport()">Send Report</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -73,7 +95,7 @@
     <input type="text" id="search" placeholder="Search all content...">
   </div>
   <div id="dd-category-wrap" style="position:relative;display:inline-block">
-    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Category ▾</button>
+    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thematic ▾</button>
     <div class="dd-filter-panel" id="dd-category-panel"></div>
   </div>
   <select id="sel-platform-cat" onchange="applyPlatformFilter()" style="padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:var(--bg);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
@@ -166,9 +188,9 @@ function badgeColor(str) {
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
   return 'bc-' + (h % 12);
 }
-function makeBadge(text, q) {
+function makeBadge(text, q, col='') {
   const span = document.createElement('span');
-  span.className = 'badge ' + badgeColor(text);
+  span.className = 'badge ' + (col.startsWith('Content -') ? 'badge-team' : 'bc-5');
   span.style.marginRight = '3px';
   span.style.marginBottom = '2px';
   span.innerHTML = highlight(text, q);
@@ -338,7 +360,7 @@ function clearTopFilters() {
 
 function updateDdBtn(type, selected) {
   const btn = document.getElementById('dd-'+type+'-btn');
-  const labels = {'category':'Category','list':'List','platform':'Platform'};
+  const labels = {'category':'Thematic','entity':'Scope / Entity','list':'List','platform':'Platform'};
   const label = labels[type] || type;
   if (selected.size > 0) {
     btn.classList.add('active');
@@ -536,13 +558,13 @@ function renderPage(data) {
         td.appendChild(a);
       }
       else if((col==='Owner Team'||col==='Author Team'||col==='Contact Team') && strVal && strVal!=='nan'){
-        td.appendChild(makeBadge(strVal, _q));
+        td.appendChild(makeBadge(strVal, _q, col));
       }
       else if(col==='Content Description'||col==='Description'||strVal.length>80){
         const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
       }
       else if(strVal.includes(';')){
-        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; td.appendChild(makeBadge(s, _q)); });
+        strVal.split(';').forEach(v=>{ const s=v.trim(); if(!s||s==='nan') return; td.appendChild(makeBadge(s, _q, col)); });
       }
       else if(!strVal||strVal==='nan'){
         td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
@@ -556,6 +578,10 @@ function renderPage(data) {
     const tdReuse=document.createElement('td');
     const btnReuse=document.createElement('button'); btnReuse.className='btn-sm btn-reuse'; btnReuse.textContent='♻️ Reuse';
     btnReuse.onclick=(e)=>{e.stopPropagation();openReuseModal(row);}; tdReuse.appendChild(btnReuse); tr.appendChild(tdReuse);
+
+    const tdReport=document.createElement('td');
+    const btnReport=document.createElement('button'); btnReport.className='btn-report'; btnReport.textContent='⚑ Report';
+    btnReport.onclick=(e)=>{e.stopPropagation();openReportModal(row);}; tdReport.appendChild(btnReport); tr.appendChild(tdReport);
 
     // Metadata button
     const tdMeta=document.createElement('td');

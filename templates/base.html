@@ -190,7 +190,7 @@
         Document Hub {% if doc_count %}<span class="nav-count">{{ doc_count }}</span>{% endif %}
       </a>
       <a class="nav-link {% if request.path=='/datacatalog' %}active{% endif %}" href="/datacatalog">
-        Data Catalog {% if catalog_count %}<span class="nav-count">{{ catalog_count }}</span>{% endif %}
+        Data Catalog {% if data_catalog_count %}<span class="nav-count">{{ data_catalog_count }}</span>{% endif %}
       </a>
       <a class="nav-link {% if request.path=='/pole' %}active{% endif %}" href="/pole">Content by Department</a>
       <a class="nav-link {% if request.path=='/people' %}active{% endif %}" href="/people">

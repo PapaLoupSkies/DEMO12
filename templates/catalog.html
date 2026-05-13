@@ -74,6 +74,8 @@
   .dd-filter-panel.open{display:block;}
   .dd-clear-btn{padding:5px 10px;border-radius:7px;font-size:11px;font-family:'Inter',sans-serif;cursor:pointer;border:1px solid #e0a0a0;background:none;color:var(--red);white-space:nowrap;}
   .dd-clear-btn:hover{background:#fdecea;}
+  .btn-report{background:#fdecea;color:var(--red);border:1px solid #f0b8b4;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;transition:all .15s;}
+  .btn-report:hover{background:var(--red);color:#fff;border-color:var(--red);}
 </style>
 {% endblock %}
 
@@ -111,16 +113,17 @@ const KB_DATE_MAX  = "{{ date_max }}";
     <input type="text" id="search" placeholder="Search all content...">
   </div>
   <div id="dd-category-wrap" style="position:relative;display:inline-block">
-    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thématique ▾</button>
+    <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thematic ▾</button>
     <div class="dd-filter-panel" id="dd-category-panel"></div>
   </div>
   <div id="dd-entity-wrap" style="position:relative;display:inline-block">
-    <button class="dd-filter-btn" id="dd-entity-btn" onclick="toggleDd('entity')">Entités ▾</button>
+    <button class="dd-filter-btn" id="dd-entity-btn" onclick="toggleDd('entity')">Scope / Entity ▾</button>
     <div class="dd-filter-panel" id="dd-entity-panel"></div>
   </div>
-  <select id="sel-platform-cat" onchange="applyPlatformFilter()" style="padding:5px 22px 5px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;color:var(--text);background:var(--bg);appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%2210%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23888%22 stroke-width=%222%22%3E%3Cpath d=%22m6 9 6 6 6-6%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 7px center;cursor:pointer;outline:none;">
-    <option value="">All Platforms</option>
-  </select>
+  <div id="dd-platform-wrap" style="position:relative;display:inline-block">
+    <button class="dd-filter-btn" id="dd-platform-btn" onclick="toggleDd('platform')">Platform ▾</button>
+    <div class="dd-filter-panel" id="dd-platform-panel"></div>
+  </div>
 
   <button class="dd-clear-btn" id="dd-clear-all" onclick="clearTopFilters()" style="display:none">✕ Clear</button>
   <select id="sort-col">
@@ -173,6 +176,26 @@ const KB_DATE_MAX  = "{{ date_max }}";
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="report-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>⚑ Report an Issue</h3>
+    <p id="report-modal-desc"></p>
+    <select id="report-reason" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;background:var(--bg);color:var(--text);outline:none;">
+      <option value="">Select a reason...</option>
+      <option value="Outdated content">Outdated content</option>
+      <option value="Incorrect information">Incorrect information</option>
+      <option value="Broken link">Broken link</option>
+      <option value="Missing information">Missing information</option>
+      <option value="Duplicate entry">Duplicate entry</option>
+      <option value="Other">Other</option>
+    </select>
+    <textarea id="report-message" placeholder="Additional details (optional)..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeReportModal()">Cancel</button>
+      <button class="btn-primary" style="background:var(--red);border-color:var(--red)" onclick="submitReport()">Send Report</button>
+    </div>
+  </div>
+</div>
 </div>{# fin #section-list #}
 
 {# ── SECTION CARD VIEW ── #}
@@ -216,9 +239,9 @@ function badgeColor(str) {
   for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xffff;
   return 'bc-' + (h % 12);
 }
-function makeBadge(text, q) {
+function makeBadge(text, q, col='') {
   const span = document.createElement('span');
-  span.className = 'badge ' + badgeColor(text);
+  span.className = 'badge ' + (col.startsWith('Content -') ? 'badge-team' : 'bc-5');
   span.style.marginRight = '3px';
   span.style.marginBottom = '2px';
   span.innerHTML = highlight(text, q);
@@ -239,51 +262,56 @@ let selectedLists = new Set();
 let selectedPlatforms = new Set();
 
 // Peupler le panel Platform immédiatement (données disponibles dès le chargement)
-function initPlatformPanel() {
-  // Peupler le select Platform
-  const sel = document.getElementById('sel-platform-cat');
-  PLATFORM_VALUES.forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    sel.appendChild(opt);
-  });
-}
+function initPlatformPanel() { /* handled by buildChips */ }
 
-function applyPlatformFilter() {
-  expandedRows.clear();
-  render();
-}
 
-function updatePlatformOptions() {
-  // Recalculer les plateformes disponibles selon les filtres actifs (hors Platform)
+function getRowsExcluding(excludeType) {
   const q = document.getElementById('search').value.toLowerCase().trim();
-  const relevant = ALL_DATA.filter(r => {
-    if(selectedCategories.size > 0){
+  return ALL_DATA.filter(r => {
+    if(excludeType !== 'category' && selectedCategories.size > 0){
       const cats = (r['Primary Thematic']||'').split(';').map(s=>s.trim());
       if(!cats.some(c=>selectedCategories.has(c))) return false;
     }
-    if(q&&!Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    if(excludeType !== 'entity' && selectedEntities.size > 0){
+      if(!selectedEntities.has(r['Owner Team'])) return false;
+    }
+    if(excludeType !== 'platform' && selectedPlatforms.size > 0){
+      const plats = (r['Platform']||'').split(';').map(s=>s.trim());
+      if(!plats.some(p=>selectedPlatforms.has(p))) return false;
+    }
+    if(q && !Object.values(r).join(' ').toLowerCase().includes(q)) return false;
     return true;
   });
-  const availPlats = new Set();
-  relevant.forEach(r => (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) availPlats.add(p); }));
-  
-  const sel = document.getElementById('sel-platform-cat');
-  const current = sel.value;
-  sel.innerHTML = '<option value="">All Platforms</option>';
-  [...availPlats].sort().forEach(p => {
-    const opt = document.createElement('option');
-    opt.value = p; opt.textContent = p;
-    if(p === current) opt.selected = true;
-    sel.appendChild(opt);
-  });
-  // Si la valeur courante n'est plus disponible, reset
-  if(current && !availPlats.has(current)){
-    sel.value = '';
-    expandedRows.clear();
-    render();
-  }
 }
+
+function updateAllFilters() {
+  // Thématiques disponibles
+  const availCats = new Set();
+  getRowsExcluding('category').forEach(r =>
+    (r['Primary Thematic']||'').split(';').forEach(c=>{ c=c.trim(); if(c) availCats.add(c); })
+  );
+  selectedCategories.forEach(c => { if(!availCats.has(c)) selectedCategories.delete(c); });
+  buildDdPanel('category', [...availCats].sort(), selectedCategories);
+  updateDdBtn('category', selectedCategories);
+
+  // Entités disponibles
+  const availEnts = new Set();
+  getRowsExcluding('entity').forEach(r => { if(r['Owner Team']) availEnts.add(r['Owner Team']); });
+  selectedEntities.forEach(e => { if(!availEnts.has(e)) selectedEntities.delete(e); });
+  buildDdPanel('entity', [...availEnts].sort(), selectedEntities);
+  updateDdBtn('entity', selectedEntities);
+
+  // Plateformes disponibles
+  const availPlats = new Set();
+  getRowsExcluding('platform').forEach(r =>
+    (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) availPlats.add(p); })
+  );
+  selectedPlatforms.forEach(p => { if(!availPlats.has(p)) selectedPlatforms.delete(p); });
+  buildDdPanel('platform', [...availPlats].sort(), selectedPlatforms);
+  updateDdBtn('platform', selectedPlatforms);
+}
+
+function updatePlatformOptions() { updateAllFilters(); }
 
 async function loadData() {
   const res = await fetch('/api/catalog');
@@ -292,7 +320,7 @@ async function loadData() {
   buildChips();
   document.getElementById('loading').style.display='none';
   document.getElementById('main-table').style.display='';
-  buildHeader(); render(); setTableHeight();
+  buildHeader(); updateAllFilters(); render(); setTableHeight();
 }
 
 // (Sets déjà déclarés en haut)
@@ -306,6 +334,10 @@ function buildChips() {
   const allEntities = new Set();
   ALL_DATA.forEach(r => { if(r['Owner Team']) allEntities.add(r['Owner Team']); });
   buildDdPanel('entity', [...allEntities].sort(), selectedEntities);
+  // Plateformes
+  const allPlats = new Set();
+  ALL_DATA.forEach(r => (r['Platform']||'').split(';').forEach(p=>{ p=p.trim(); if(p) allPlats.add(p); }));
+  buildDdPanel('platform', [...allPlats].sort(), selectedPlatforms);
 }
 
 function buildDdPanel(type, values, selected) {
@@ -364,8 +396,8 @@ function applyDdFilter(type, selected) {
   checked.forEach(v => resolvedSet.add(v));
   const selected2 = resolvedSet;
   updateDdBtn(type, resolvedSet);
-  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size) ? '' : 'none';
-  updatePlatformOptions();
+  document.getElementById('dd-clear-all').style.display = (selectedCategories.size||selectedEntities.size||selectedPlatforms.size) ? '' : 'none';
+  updateAllFilters();
   expandedRows.clear(); render();
 }
 
@@ -388,15 +420,18 @@ function clearTopFilters() {
   const entPanel = document.getElementById('dd-entity-panel');
   if(entPanel) entPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
   updateDdBtn('entity', new Set());
-  document.getElementById('sel-platform-cat').value = '';
-  updatePlatformOptions();
+  selectedPlatforms.clear();
+  const platPanel = document.getElementById('dd-platform-panel');
+  if(platPanel) platPanel.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateDdBtn('platform', new Set());
+  updateAllFilters();
   document.getElementById('dd-clear-all').style.display = 'none';
   expandedRows.clear(); render();
 }
 
 function updateDdBtn(type, selected) {
   const btn = document.getElementById('dd-'+type+'-btn');
-  const labels = {'category':'Category','list':'List','platform':'Platform'};
+  const labels = {'category':'Thematic','entity':'Scope / Entity','list':'List','platform':'Platform'};
   const label = labels[type] || type;
   if (selected.size > 0) {
     btn.classList.add('active');
@@ -418,7 +453,7 @@ function toggleDd(type) {
 
 // Fermer les dropdowns si clic ailleurs
 document.addEventListener('click', e => {
-  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-entity-wrap') && !e.target.closest('#dd-list-wrap')) {
+  if (!e.target.closest('#dd-category-wrap') && !e.target.closest('#dd-entity-wrap') && !e.target.closest('#dd-platform-wrap') && !e.target.closest('#dd-list-wrap')) {
     document.querySelectorAll('.dd-filter-panel').forEach(p => p.classList.remove('open'));
   }
 });
@@ -481,12 +516,11 @@ function clearAllColFilters(){colFilters={};updateActiveFiltersBar();buildHeader
 
 function getFiltered(){
   const q = document.getElementById('search').value.toLowerCase().trim();
-  const platVal = document.getElementById('sel-platform-cat').value;
   return ALL_DATA.filter(r=>{
-    // Filtre Platform (select simple)
-    if(platVal){
+    // Filtre Platform (multi-select)
+    if(selectedPlatforms.size > 0){
       const plats = (r['Platform']||'').split(';').map(s=>s.trim());
-      if(!plats.includes(platVal)) return false;
+      if(!plats.some(p=>selectedPlatforms.has(p))) return false;
     }
     // Filtre Category
     if(selectedCategories.size > 0){
@@ -628,7 +662,7 @@ function renderPage(data) {
         if(parts.length===0){
           td.innerHTML='<span style="color:var(--text-light);font-size:11px">—</span>';
         } else {
-          parts.forEach(v=>{ td.appendChild(makeBadge(v, _q)); });
+          parts.forEach(v=>{ td.appendChild(makeBadge(v, _q, col)); });
         }
       }
 
@@ -639,6 +673,10 @@ function renderPage(data) {
     const tdReuse=document.createElement('td');
     const btnReuse=document.createElement('button'); btnReuse.className='btn-sm btn-reuse'; btnReuse.textContent='♻️ Reuse';
     btnReuse.onclick=(e)=>{e.stopPropagation();openReuseModal(row);}; tdReuse.appendChild(btnReuse); tr.appendChild(tdReuse);
+
+    const tdReport=document.createElement('td');
+    const btnReport=document.createElement('button'); btnReport.className='btn-report'; btnReport.textContent='⚑ Report';
+    btnReport.onclick=(e)=>{e.stopPropagation();openReportModal(row);}; tdReport.appendChild(btnReport); tr.appendChild(tdReport);
 
     // Metadata button
     const tdMeta=document.createElement('td');
@@ -687,7 +725,7 @@ function renderPage(data) {
               valStr.split(';').forEach(v => {
                 const s = v.trim(); if (!s || s==='nan') return;
                 const b = document.createElement('span');
-                b.className = 'badge ' + badgeColor(s);
+                b.className = 'badge ' + (col.startsWith('Content -') ? 'badge-team' : 'bc-5');
                 b.style.cssText = 'margin-bottom:2px;display:inline-block';
                 b.textContent = s;
                 wrap.appendChild(b);
@@ -731,7 +769,7 @@ async function submitReuse(){
   closeReuseModal();alert('✅ Reuse request sent!');
 }
 
-document.getElementById('search').addEventListener('input', debounce(()=>{expandedRows.clear();render();}, 300));
+document.getElementById('search').addEventListener('input', debounce(()=>{expandedRows.clear();updateAllFilters();render();}, 300));
 document.getElementById('sort-col').addEventListener('change',e=>{sortCol=e.target.value;buildHeader();render();});
 document.getElementById('sort-dir').addEventListener('change',e=>{sortDir=e.target.value;buildHeader();render();});
 document.getElementById('reuse-modal').addEventListener('click',closeReuseModal);
@@ -749,6 +787,40 @@ function setTableHeight() {
 }
 window.addEventListener('resize', setTableHeight);
 
+
+// ── Report modal ──
+let reportTarget = null;
+function openReportModal(row) {
+  reportTarget = row;
+  document.getElementById('report-modal-desc').textContent =
+    '"' + (row['Content Name (EN)']||row['Doc Name (EN)']||row['ID']||'?') + '" (Owner: ' + (row['Owner Team']||'?') + ')';
+  document.getElementById('report-reason').value = '';
+  document.getElementById('report-message').value = '';
+  document.getElementById('report-modal').classList.add('open');
+}
+function closeReportModal() {
+  document.getElementById('report-modal').classList.remove('open');
+  reportTarget = null;
+}
+async function submitReport() {
+  if (!reportTarget) return;
+  const reason = document.getElementById('report-reason').value;
+  if (!reason) { alert('Please select a reason.'); return; }
+  await fetch('/api/report', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      content_id:   reportTarget.ID || reportTarget['Content Name (EN)'],
+      content_name: reportTarget['Content Name (EN)'] || reportTarget['Doc Name (EN)'],
+      owner_team:   reportTarget['Owner Team'],
+      reason:       reason,
+      message:      document.getElementById('report-message').value
+    })
+  });
+  closeReportModal();
+  alert('✅ Report sent!');
+}
+document.getElementById('report-modal').addEventListener('click', closeReportModal);
 
 // ── View toggle ──
 function switchView(v) {
