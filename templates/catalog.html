@@ -580,7 +580,8 @@ function renderPage(data) {
       // ── Column type detection ──
       const isLink    = (col==='Content Published Link'||col==='Doc Published Link'||col==='Lien_url') && /^https?:\/\//.test(strVal);
       const isDate    = /^\d{4}-\d{2}-\d{2}/.test(strVal) && (col.toLowerCase().includes('date'));
-      const isLongTxt = (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)');
+      const isContentMeta = col.startsWith('Content -');
+      const isLongTxt = !isContentMeta && (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)');
       const isEmpty   = !strVal || strVal==='nan';
 
       if(isEmpty){
@@ -602,7 +603,7 @@ function renderPage(data) {
         } catch(e) { td.innerHTML=highlight(strVal,_q); }
       }
       // Long / plain text columns
-      else if(isLongTxt || strVal.length>80){
+      else if(!isContentMeta && (isLongTxt || strVal.length>80)){
         const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
       }
       // Everything else → always badge(s), split by ;
@@ -658,7 +659,7 @@ function renderPage(data) {
             sec.appendChild(dash);
           } else {
             // Always split by ; and show badge(s) — whether 1 or many values
-            const isPlainText = col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)'||valStr.length>150;
+            const isPlainText = !col.startsWith('Content -') && (col==='Content Description'||col==='Description'||col==='Content Name (EN)'||col==='Content Name (FR)'||col==='Doc Name (EN)'||col==='Doc Name (FR)'||col==='Instance Name (EN | FR)'||valStr.length>150);
             if (isPlainText) {
               const pre = document.createElement('pre');
               pre.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.6';
