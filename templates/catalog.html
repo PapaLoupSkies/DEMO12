@@ -141,7 +141,7 @@ const KB_DATE_MAX  = "{{ date_max }}";
 
 <div class="table-wrap" id="table-wrap">
   <div class="loading" id="loading">Loading data...</div>
-  <table id="main-table" style="display:none;min-width:max-content;width:max-content;">
+  <table id="main-table" style="display:none;min-width:1400px;">
     <thead><tr class="header-row" id="thead-row"></tr></thead>
     <tbody id="tbody"></tbody>
   </table>
@@ -589,7 +589,7 @@ function renderPage(data) {
         td.appendChild(makeBadge(strVal, _q));
       }
       // Long text columns — expandable cell
-      else if(col==='Content Description'||col==='Description'||strVal.length>80){
+      else if(col==='Content Description'||col==='Description'||strVal.length>60){
         const cell=makeCell(strVal,2); td.replaceWith(cell); tr.appendChild(cell); return;
       }
       // Multi-value columns (;-separated) — pills
@@ -644,8 +644,34 @@ function renderPage(data) {
           const valStr = empty ? '' : String(v);
           const sec = document.createElement('div');
           sec.className = 'detail-section';
-          sec.innerHTML = '<h4>' + esc(col) + '</h4>' +
-            '<pre>' + (empty ? '<span style="color:var(--text-muted);font-style:italic">—</span>' : esc(valStr)) + '</pre>';
+          const titleEl = document.createElement('h4');
+          titleEl.textContent = col;
+          sec.appendChild(titleEl);
+          if (empty) {
+            const dash = document.createElement('span');
+            dash.style.cssText = 'color:var(--text-muted);font-style:italic;font-size:12px';
+            dash.textContent = '—';
+            sec.appendChild(dash);
+          } else if (valStr.includes(';')) {
+            // multi-value → colored badges
+            const wrap = document.createElement('div');
+            wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;margin-top:4px';
+            valStr.split(';').forEach(v => {
+              const s = v.trim(); if (!s) return;
+              const b = document.createElement('span');
+              b.className = 'badge ' + badgeColor(s);
+              b.style.marginBottom = '2px';
+              b.textContent = s;
+              wrap.appendChild(b);
+            });
+            sec.appendChild(wrap);
+          } else {
+            // single value — text + copy button
+            const pre = document.createElement('pre');
+            pre.style.cssText = 'font-family:Inter,sans-serif;font-size:12px;white-space:pre-wrap;word-break:break-word;line-height:1.6';
+            pre.textContent = valStr;
+            sec.appendChild(pre);
+          }
           if (!empty) {
             const copyBtn = document.createElement('button');
             copyBtn.className = 'cell-copy'; copyBtn.textContent = '⎘ Copy';
@@ -669,7 +695,7 @@ function toggle(id,e){e.stopPropagation();expandedRows.has(id)?expandedRows.dele
 
 function openReuseModal(row){
   reuseTarget=row;
-  document.getElementById('reuse-modal-desc').textContent=`"${row['English Name']}" (Owner: ${row['Owner Team']||'?'})`;
+  document.getElementById('reuse-modal-desc').textContent=`"${row['Content Name (EN)']||row['Doc Name (EN)']||row['ID']||'?'}" (Owner: ${row['Owner Team']||'?'})`;
   document.getElementById('reuse-message').value='';
   document.getElementById('reuse-modal').classList.add('open');
 }
