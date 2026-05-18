@@ -231,7 +231,7 @@
 <script>
 const CURRENT_USER = {{ user | tojson }};
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-let _openDropdown = null;
+if(typeof _openDropdown === 'undefined') var _openDropdown = null;
 
 async function openNotifications() {
   document.getElementById('notif-overlay').classList.add('open');

@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, session, flash, send_from_directory, Response
+import json
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -353,6 +354,130 @@ def api_notifications():
 def api_notifications_clear():
     session["notifications"] = []
     session["notif_count"]   = 0
+    return jsonify({"ok": True})
+
+# ── Document versions JSON path ──────────────────────────────
+DOC_VERSIONS_PATH = f"{BASE}/catalog/doc_versions.json"
+DOC_UPLOADS_DIR   = os.path.join("static", "uploads", "docs")
+os.makedirs(DOC_UPLOADS_DIR, exist_ok=True)
+
+def load_doc_versions():
+    try:
+        with open(DOC_VERSIONS_PATH) as f: return json.load(f)
+    except: return {}
+
+def save_doc_versions(data):
+    with open(DOC_VERSIONS_PATH, "w") as f: json.dump(data, f, indent=2, ensure_ascii=False)
+
+def can_edit():
+    u = cur_user()
+    return u.get("access_group","Read Only") in ("Editor","Super Admin")
+
+@app.route("/api/doc/versions/<doc_id>")
+@login_required
+def api_doc_versions(doc_id):
+    data = load_doc_versions()
+    return jsonify(data.get(doc_id, {"files":[], "links":[]}))
+
+@app.route("/api/doc/upload/<doc_id>", methods=["POST"])
+@login_required
+def api_doc_upload(doc_id):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    import datetime
+    f = request.files.get("file")
+    if not f: return jsonify({"error":"No file"}), 400
+    fname = f"{doc_id}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{secure_filename(f.filename)}"
+    fpath = os.path.join(DOC_UPLOADS_DIR, fname)
+    f.save(fpath)
+    data = load_doc_versions()
+    if doc_id not in data: data[doc_id] = {"files":[], "links":[]}
+    u = cur_user()
+    entry = {
+        "filename": fname,
+        "original": f.filename,
+        "size": os.path.getsize(fpath),
+        "date": datetime.datetime.now().strftime("%d %b %Y"),
+        "author": u.get("username","?"),
+        "current": True
+    }
+    # Previous current → not current
+    for v in data[doc_id]["files"]: v["current"] = False
+    data[doc_id]["files"].insert(0, entry)
+    save_doc_versions(data)
+    return jsonify({"ok": True, "entry": entry})
+
+@app.route("/api/doc/download/<doc_id>/<filename>")
+@login_required
+def api_doc_download(doc_id, filename):
+    from flask import send_from_directory
+    return send_from_directory(DOC_UPLOADS_DIR, filename, as_attachment=True)
+
+@app.route("/api/doc/delete-file/<doc_id>/<filename>", methods=["POST"])
+@login_required
+def api_doc_delete_file(doc_id, filename):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    data = load_doc_versions()
+    if doc_id in data:
+        data[doc_id]["files"] = [v for v in data[doc_id]["files"] if v["filename"] != filename]
+        save_doc_versions(data)
+    fpath = os.path.join(DOC_UPLOADS_DIR, filename)
+    if os.path.exists(fpath): os.remove(fpath)
+    return jsonify({"ok": True})
+
+@app.route("/api/doc/restore-file/<doc_id>/<filename>", methods=["POST"])
+@login_required
+def api_doc_restore_file(doc_id, filename):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    data = load_doc_versions()
+    if doc_id in data:
+        for v in data[doc_id]["files"]:
+            v["current"] = (v["filename"] == filename)
+        save_doc_versions(data)
+    return jsonify({"ok": True})
+
+@app.route("/api/doc/add-link/<doc_id>", methods=["POST"])
+@login_required
+def api_doc_add_link(doc_id):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    import datetime
+    body = request.get_json(silent=True) or {}
+    url  = body.get("url","").strip()
+    if not url: return jsonify({"error":"No URL"}), 400
+    data = load_doc_versions()
+    if doc_id not in data: data[doc_id] = {"files":[], "links":[]}
+    u = cur_user()
+    for lnk in data[doc_id]["links"]: lnk["current"] = False
+    data[doc_id]["links"].insert(0, {
+        "url":     url,
+        "date":    datetime.datetime.now().strftime("%d %b %Y"),
+        "author":  u.get("username","?"),
+        "current": True
+    })
+    save_doc_versions(data)
+    return jsonify({"ok": True})
+
+@app.route("/api/doc/delete-link/<doc_id>", methods=["POST"])
+@login_required
+def api_doc_delete_link(doc_id):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    body = request.get_json(silent=True) or {}
+    url  = body.get("url","")
+    data = load_doc_versions()
+    if doc_id in data:
+        data[doc_id]["links"] = [l for l in data[doc_id]["links"] if l["url"] != url]
+        save_doc_versions(data)
+    return jsonify({"ok": True})
+
+@app.route("/api/doc/restore-link/<doc_id>", methods=["POST"])
+@login_required
+def api_doc_restore_link(doc_id):
+    if not can_edit(): return jsonify({"error":"Unauthorized"}), 403
+    body = request.get_json(silent=True) or {}
+    url  = body.get("url","")
+    data = load_doc_versions()
+    if doc_id in data:
+        for l in data[doc_id]["links"]: l["current"] = (l["url"] == url)
+        save_doc_versions(data)
     return jsonify({"ok": True})
 
 @app.route("/api/report", methods=["POST"])

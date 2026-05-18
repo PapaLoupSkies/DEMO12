@@ -50,6 +50,24 @@
   .bc-9  { background:#f5f0e8; color:#6b4a1a; border-color:#d9c4b3; }
   .bc-10 { background:#f5e8f0; color:#6b1a4a; border-color:#d9b3c4; }
   .bc-11 { background:#e8e8f5; color:#2a2a6b; border-color:#b3b3d9; }
+
+  /* Column filter dropdown */
+  .col-filter-dd { background:var(--white); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); min-width:220px; max-width:280px; overflow:hidden; }
+  .col-filter-search { padding:8px; border-bottom:1px solid var(--border); }
+  .col-filter-search input { width:100%; padding:5px 9px; border:1px solid var(--border); border-radius:6px; font-family:'Inter',sans-serif; font-size:12px; outline:none; background:var(--bg); }
+  .col-filter-search input:focus { border-color:var(--accent); }
+  .col-filter-actions { display:flex; justify-content:space-between; padding:5px 10px; border-bottom:1px solid var(--border); }
+  .col-filter-actions button { font-size:11px; font-family:'Inter',sans-serif; border:none; background:none; color:var(--accent); font-weight:600; cursor:pointer; padding:2px 4px; }
+  .col-filter-actions button:hover { text-decoration:underline; }
+  .col-filter-list { max-height:200px; overflow-y:auto; padding:4px 0; }
+  .col-filter-item { display:flex; align-items:center; gap:8px; padding:5px 12px; cursor:pointer; transition:background .1s; }
+  .col-filter-item:hover { background:var(--bg); }
+  .col-filter-item input[type=checkbox] { accent-color:var(--accent); width:13px; height:13px; cursor:pointer; flex-shrink:0; }
+  .col-filter-item label { font-size:12px; color:var(--text); cursor:pointer; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .col-filter-footer { padding:7px 10px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:6px; }
+  .col-filter-apply { padding:4px 12px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; }
+  .col-filter-apply:hover { opacity:.9; }
+  .col-filter-cancel { padding:4px 10px; background:none; border:1px solid var(--border); border-radius:6px; font-size:12px; font-family:'Inter',sans-serif; cursor:pointer; color:var(--text-muted); }
   /* Cell expand */
   .cell-wrap { position: relative; }
   .cell-short { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -482,6 +500,68 @@ function buildHeader() {
   if(!sortCol) sortCol = VISIBLE_COLS[0];
 }
 
+
+
+function buildColFilter(col, allVals, active, onApply) {
+  const dd = document.createElement('div');
+  dd.className = 'col-filter-dd';
+
+  // Search input
+  const searchWrap = document.createElement('div'); searchWrap.className = 'col-filter-search';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text'; searchInput.placeholder = 'Search...';
+  searchWrap.appendChild(searchInput); dd.appendChild(searchWrap);
+
+  // Select all / None
+  const actions = document.createElement('div'); actions.className = 'col-filter-actions';
+  const btnAll = document.createElement('button'); btnAll.textContent = 'Select all';
+  const btnNone = document.createElement('button'); btnNone.textContent = 'Clear';
+  actions.appendChild(btnAll); actions.appendChild(btnNone); dd.appendChild(actions);
+
+  // List
+  const list = document.createElement('div'); list.className = 'col-filter-list'; dd.appendChild(list);
+
+  // Multi-values support (;-separated)
+  const expandedVals = new Set();
+  allVals.forEach(v => {
+    String(v).split(';').forEach(p => { p = p.trim(); if(p && p !== 'nan') expandedVals.add(p); });
+  });
+  const sortedVals = [...expandedVals].sort();
+
+  function renderList(q) {
+    list.innerHTML = '';
+    sortedVals.filter(v => !q || v.toLowerCase().includes(q.toLowerCase())).forEach(val => {
+      const item = document.createElement('div'); item.className = 'col-filter-item';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = val;
+      cb.checked = active.includes(val);
+      const lbl = document.createElement('label'); lbl.textContent = val;
+      lbl.addEventListener('click', () => { cb.checked = !cb.checked; });
+      item.appendChild(cb); item.appendChild(lbl); list.appendChild(item);
+    });
+  }
+  renderList('');
+
+  searchInput.addEventListener('input', () => renderList(searchInput.value));
+  btnAll.addEventListener('click', e => { e.stopPropagation(); list.querySelectorAll('input').forEach(cb => cb.checked = true); });
+  btnNone.addEventListener('click', e => { e.stopPropagation(); list.querySelectorAll('input').forEach(cb => cb.checked = false); });
+
+  // Footer
+  const footer = document.createElement('div'); footer.className = 'col-filter-footer';
+  const btnCancel = document.createElement('button'); btnCancel.className = 'col-filter-cancel'; btnCancel.textContent = 'Cancel';
+  btnCancel.addEventListener('click', e => { e.stopPropagation(); dd.remove(); _openDropdown = null; });
+  const btnApply = document.createElement('button'); btnApply.className = 'col-filter-apply'; btnApply.textContent = 'Apply';
+  btnApply.addEventListener('click', e => {
+    e.stopPropagation();
+    const checked = [...list.querySelectorAll('input:checked')].map(cb => cb.value);
+    onApply(checked);
+  });
+  footer.appendChild(btnCancel); footer.appendChild(btnApply); dd.appendChild(footer);
+
+  dd.addEventListener('click', e => e.stopPropagation());
+  setTimeout(() => searchInput.focus(), 50);
+  return dd;
+}
+
 function openColFilter(e,col,iconEl){
   e.stopPropagation();
   if(_openDropdown){_openDropdown.remove();_openDropdown=null;}
@@ -534,7 +614,11 @@ function getFiltered(){
     // Recherche textuelle
     if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
     // Filtres colonnes
-    for(const[col,vals]of Object.entries(colFilters))if(vals.length&&!vals.includes(r[col]||''))return false;
+    for(const[col,vals]of Object.entries(colFilters)){
+      if(!vals.length) continue;
+      const cellVals=(r[col]||'').split(';').map(s=>s.trim());
+      if(!cellVals.some(v=>vals.includes(v))) return false;
+    }
     return true;
   });
 }

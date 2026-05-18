@@ -38,6 +38,72 @@
   .bc-9  { background:#f5f0e8; color:#6b4a1a; border-color:#d9c4b3; }
   .bc-10 { background:#f5e8f0; color:#6b1a4a; border-color:#d9b3c4; }
   .bc-11 { background:#e8e8f5; color:#2a2a6b; border-color:#b3b3d9; }
+/* Column filter dropdown */
+  .col-filter-dd { background:var(--white); border:1px solid var(--border); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); min-width:220px; max-width:280px; overflow:hidden; }
+  .col-filter-search { padding:8px; border-bottom:1px solid var(--border); }
+  .col-filter-search input { width:100%; padding:5px 9px; border:1px solid var(--border); border-radius:6px; font-family:'Inter',sans-serif; font-size:12px; outline:none; background:var(--bg); }
+  .col-filter-search input:focus { border-color:var(--accent); }
+  .col-filter-actions { display:flex; justify-content:space-between; padding:5px 10px; border-bottom:1px solid var(--border); }
+  .col-filter-actions button { font-size:11px; font-family:'Inter',sans-serif; border:none; background:none; color:var(--accent); font-weight:600; cursor:pointer; padding:2px 4px; }
+  .col-filter-actions button:hover { text-decoration:underline; }
+  .col-filter-list { max-height:200px; overflow-y:auto; padding:4px 0; }
+  .col-filter-item { display:flex; align-items:center; gap:8px; padding:5px 12px; cursor:pointer; transition:background .1s; }
+  .col-filter-item:hover { background:var(--bg); }
+  .col-filter-item input[type=checkbox] { accent-color:var(--accent); width:13px; height:13px; cursor:pointer; flex-shrink:0; }
+  .col-filter-item label { font-size:12px; color:var(--text); cursor:pointer; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .col-filter-footer { padding:7px 10px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:6px; }
+  .col-filter-apply { padding:4px 12px; background:var(--accent); color:#fff; border:none; border-radius:6px; font-size:12px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; }
+  .col-filter-apply:hover { opacity:.9; }
+  .col-filter-cancel { padding:4px 10px; background:none; border:1px solid var(--border); border-radius:6px; font-size:12px; font-family:'Inter',sans-serif; cursor:pointer; color:var(--text-muted); }
+
+  /* ── Doc View Modal ── */
+  .btn-view { background:#e8f5f0; color:#0F6E56; border:1px solid #9FE1CB; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; white-space:nowrap; transition:all .15s; }
+  .btn-view:hover { background:#0F6E56; color:#fff; }
+  #doc-modal-overlay { position:fixed; inset:0; z-index:2000; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .2s; }
+  #doc-modal-overlay.open { opacity:1; pointer-events:all; }
+  #doc-modal { background:var(--white); border-radius:12px; width:100%; max-width:660px; max-height:88vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,.22); transform:translateY(16px) scale(.97); transition:transform .2s; overflow:hidden; }
+  #doc-modal-overlay.open #doc-modal { transform:translateY(0) scale(1); }
+  .doc-modal-hdr { flex:0 0 auto; padding:15px 18px 12px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:12px; }
+  .doc-modal-icon { width:38px; height:38px; border-radius:8px; background:#E1F5EE; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:20px; }
+  .doc-modal-hdr-info { flex:1; }
+  .doc-modal-title { font-size:15px; font-weight:600; color:var(--text); }
+  .doc-modal-sub { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .doc-modal-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--border); background:var(--bg); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-muted); font-size:15px; flex-shrink:0; }
+  .doc-modal-close:hover { background:#fdecea; border-color:#e0a0a0; color:var(--red); }
+  .doc-modal-tabs { display:flex; border-bottom:1px solid var(--border); padding:0 18px; }
+  .doc-modal-tab { padding:9px 14px; font-size:12px; font-weight:500; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+  .doc-modal-tab.active { color:var(--accent); border-bottom-color:var(--accent); font-weight:600; }
+  .doc-modal-body { flex:1; overflow-y:auto; padding:16px 18px; min-height:200px; }
+  .doc-modal-body::-webkit-scrollbar { width:5px; } .doc-modal-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+  .doc-modal-footer { flex:0 0 auto; padding:10px 18px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:8px; }
+  /* Version items */
+  .doc-current-box { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:14px; }
+  .doc-current-label { font-size:10px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .doc-version-item { display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:8px; margin-bottom:6px; background:var(--white); }
+  .doc-file-icon { width:32px; height:32px; border-radius:7px; background:#E6F1FB; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:16px; }
+  .doc-file-name { font-size:12px; font-weight:500; color:var(--text); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .doc-file-meta { font-size:10px; color:var(--text-muted); margin-top:1px; }
+  .doc-v-badge { font-size:10px; padding:2px 7px; border-radius:20px; background:var(--bg); border:1px solid var(--border); color:var(--text-muted); white-space:nowrap; }
+  .doc-v-badge.cur { background:var(--accent-light); color:var(--accent); border-color:#b3d9d4; }
+  .doc-btn-icon { width:26px; height:26px; border-radius:6px; border:1px solid var(--border); background:var(--bg); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; color:var(--text-muted); }
+  .doc-btn-icon:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
+  .doc-btn-icon.danger:hover { border-color:var(--red); color:var(--red); background:#fdecea; }
+  .doc-upload-zone { border:1.5px dashed var(--border); border-radius:8px; padding:16px; text-align:center; cursor:pointer; margin-top:10px; transition:all .15s; }
+  .doc-upload-zone:hover { border-color:var(--accent); background:var(--accent-light); }
+  .doc-upload-zone p { font-size:12px; color:var(--text-muted); margin-top:4px; }
+  .doc-link-input { display:flex; gap:8px; margin-top:8px; }
+  .doc-link-input input { flex:1; padding:6px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:'Inter',sans-serif; outline:none; background:var(--bg); color:var(--text); }
+  .doc-link-input input:focus { border-color:var(--accent); }
+  .doc-section-title { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; margin:12px 0 6px; }
+  .doc-edit-field { margin-bottom:10px; }
+  .doc-edit-field label { font-size:11px; color:var(--text-muted); display:block; margin-bottom:3px; }
+  .doc-edit-field input, .doc-edit-field select, .doc-edit-field textarea { width:100%; padding:6px 10px; border:1px solid var(--border); border-radius:7px; font-size:12px; font-family:'Inter',sans-serif; outline:none; background:var(--bg); color:var(--text); }
+  .doc-edit-field input:focus, .doc-edit-field select:focus, .doc-edit-field textarea:focus { border-color:var(--accent); }
+  .doc-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .doc-info-field { display:flex; flex-direction:column; gap:2px; }
+  .doc-info-field.full { grid-column:1/-1; }
+  .doc-info-label { font-size:10px; color:var(--text-muted); font-weight:600; }
+  .doc-info-val { font-size:12px; color:var(--text); }
   /* Cell expand */
   .cell-wrap { position: relative; }
   .cell-short { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -150,6 +216,33 @@
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeReuseModal()">Cancel</button>
       <button class="btn-primary" onclick="submitReuse()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ── Doc View Modal ── -->
+<div id="doc-modal-overlay">
+  <div id="doc-modal">
+    <div class="doc-modal-hdr">
+      <div class="doc-modal-icon">📄</div>
+      <div class="doc-modal-hdr-info">
+        <div class="doc-modal-title" id="dvm-title">—</div>
+        <div class="doc-modal-sub" id="dvm-sub"></div>
+      </div>
+      <button class="doc-modal-close" onclick="closeDocModal()">✕</button>
+    </div>
+    <div class="doc-modal-tabs">
+      <div class="doc-modal-tab active" onclick="docTab('files',this)" id="dtab-files-btn">Files &amp; Versions</div>
+      <div class="doc-modal-tab" onclick="docTab('info',this)">Information</div>
+      <div class="doc-modal-tab" onclick="docTab('edit',this)" id="dtab-edit-btn">Edit</div>
+    </div>
+    <div class="doc-modal-body" id="dtab-files"></div>
+    <div class="doc-modal-body" id="dtab-info" style="display:none"></div>
+    <div class="doc-modal-body" id="dtab-edit" style="display:none"></div>
+    <div class="doc-modal-footer">
+      <button class="btn-cancel" onclick="closeDocModal()">Close</button>
+      <button class="btn-primary" id="dvm-save" onclick="saveDocEdit()" style="display:none">Save changes</button>
     </div>
   </div>
 </div>
@@ -411,6 +504,68 @@ function buildHeader() {
   if(!sortCol) sortCol = VISIBLE_COLS[0];
 }
 
+
+function buildColFilter(col, allVals, active, onApply) {
+  const dd = document.createElement('div');
+  dd.className = 'col-filter-dd';
+
+  // Search input
+  const searchWrap = document.createElement('div'); searchWrap.className = 'col-filter-search';
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text'; searchInput.placeholder = 'Search...';
+  searchWrap.appendChild(searchInput); dd.appendChild(searchWrap);
+
+  // Select all / None
+  const actions = document.createElement('div'); actions.className = 'col-filter-actions';
+  const btnAll = document.createElement('button'); btnAll.textContent = 'Select all';
+  const btnNone = document.createElement('button'); btnNone.textContent = 'Clear';
+  actions.appendChild(btnAll); actions.appendChild(btnNone); dd.appendChild(actions);
+
+  // List
+  const list = document.createElement('div'); list.className = 'col-filter-list'; dd.appendChild(list);
+
+  // Multi-values support (;-separated)
+  const expandedVals = new Set();
+  allVals.forEach(v => {
+    String(v).split(';').forEach(p => { p = p.trim(); if(p && p !== 'nan') expandedVals.add(p); });
+  });
+  const sortedVals = [...expandedVals].sort();
+
+  function renderList(q) {
+    list.innerHTML = '';
+    sortedVals.filter(v => !q || v.toLowerCase().includes(q.toLowerCase())).forEach(val => {
+      const item = document.createElement('div'); item.className = 'col-filter-item';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = val;
+      cb.checked = active.includes(val);
+      const lbl = document.createElement('label'); lbl.textContent = val;
+      lbl.addEventListener('click', () => { cb.checked = !cb.checked; });
+      item.appendChild(cb); item.appendChild(lbl); list.appendChild(item);
+    });
+  }
+  renderList('');
+
+  searchInput.addEventListener('input', () => renderList(searchInput.value));
+  btnAll.addEventListener('click', e => { e.stopPropagation(); list.querySelectorAll('input').forEach(cb => cb.checked = true); });
+  btnNone.addEventListener('click', e => { e.stopPropagation(); list.querySelectorAll('input').forEach(cb => cb.checked = false); });
+
+  // Footer
+  const footer = document.createElement('div'); footer.className = 'col-filter-footer';
+  const btnCancel = document.createElement('button'); btnCancel.className = 'col-filter-cancel'; btnCancel.textContent = 'Cancel';
+  btnCancel.addEventListener('click', e => { e.stopPropagation(); dd.remove(); _openDropdown = null; });
+  const btnApply = document.createElement('button'); btnApply.className = 'col-filter-apply'; btnApply.textContent = 'Apply';
+  btnApply.addEventListener('click', e => {
+    e.stopPropagation();
+    const checked = [...list.querySelectorAll('input:checked')].map(cb => cb.value);
+    onApply(checked);
+  });
+  footer.appendChild(btnCancel); footer.appendChild(btnApply); dd.appendChild(footer);
+
+  dd.addEventListener('click', e => e.stopPropagation());
+  setTimeout(() => searchInput.focus(), 50);
+  return dd;
+}
+
+
 function openColFilter(e,col,iconEl){
   e.stopPropagation();
   if(_openDropdown){_openDropdown.remove();_openDropdown=null;}
@@ -460,7 +615,11 @@ function getFiltered(){
     // Recherche textuelle
     if(q&&!Object.values(r).join(' ').toLowerCase().includes(q))return false;
     // Filtres colonnes
-    for(const[col,vals]of Object.entries(colFilters))if(vals.length&&!vals.includes(r[col]||''))return false;
+    for(const[col,vals]of Object.entries(colFilters)){
+      if(!vals.length) continue;
+      const cellVals=(r[col]||'').split(';').map(s=>s.trim());
+      if(!cellVals.some(v=>vals.includes(v))) return false;
+    }
     return true;
   });
 }
@@ -583,6 +742,10 @@ function renderPage(data) {
     const btnReport=document.createElement('button'); btnReport.className='btn-report'; btnReport.textContent='⚑ Report';
     btnReport.onclick=(e)=>{e.stopPropagation();openReportModal(row);}; tdReport.appendChild(btnReport); tr.appendChild(tdReport);
 
+    const tdView=document.createElement('td');
+    const btnView=document.createElement('button'); btnView.className='btn-view'; btnView.textContent='👁 View';
+    btnView.onclick=(e)=>{e.stopPropagation();openDocModal(row);}; tdView.appendChild(btnView); tr.appendChild(tdView);
+
     // Metadata button
     const tdMeta=document.createElement('td');
     const btnMeta=document.createElement('button'); btnMeta.className='btn-sm'; btnMeta.textContent=isExp?'▲ Hide':'▼ Specific cols';
@@ -650,6 +813,232 @@ document.getElementById('search').addEventListener('input', debounce(()=>{expand
 document.getElementById('sort-col').addEventListener('change',e=>{sortCol=e.target.value;buildHeader();render();});
 document.getElementById('sort-dir').addEventListener('change',e=>{sortDir=e.target.value;buildHeader();render();});
 document.getElementById('reuse-modal').addEventListener('click',closeReuseModal);
+
+// ── Doc View Modal ──────────────────────────────────────────
+let _docRow = null;
+const CAN_EDIT = {{ 'true' if user.access_group in ['Editor','Super Admin'] else 'false' }};
+
+function openDocModal(row) {
+  _docRow = row;
+  const isExternal = !!(row['Doc Published Link'] && row['Doc Published Link'] !== 'nan');
+  document.getElementById('dvm-title').textContent = row['Doc Name (EN)'] || row['Doc Name (FR)'] || row['ID'] || '—';
+  document.getElementById('dvm-sub').innerHTML =
+    '<span>' + (row['Owner Team']||'?') + '</span><span>·</span><span class="badge badge-team">' + (row['Status']||'') + '</span>';
+  document.getElementById('dtab-files-btn').textContent = isExternal ? 'Links & History' : 'Files & Versions';
+  document.getElementById('dvm-save').style.display = CAN_EDIT ? '' : 'none';
+  document.getElementById('doc-modal-overlay').classList.add('open');
+  docTab('files', document.querySelector('.doc-modal-tab'));
+  loadDocTab('files', row, isExternal);
+  buildDocInfo(row);
+  buildDocEdit(row);
+}
+function closeDocModal() {
+  document.getElementById('doc-modal-overlay').classList.remove('open');
+  _docRow = null;
+}
+document.getElementById('doc-modal-overlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('doc-modal-overlay')) closeDocModal();
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') closeDocModal(); });
+
+function docTab(name, el) {
+  ['files','info','edit'].forEach(t => {
+    document.getElementById('dtab-'+t).style.display = t===name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.doc-modal-tab').forEach(t => t.classList.remove('active'));
+  if(el) el.classList.add('active');
+}
+
+async function loadDocTab(name, row, isExternal) {
+  const docId = row['ID'] || row['Doc Name (EN)'];
+  const res = await fetch('/api/doc/versions/' + encodeURIComponent(docId));
+  const vdata = await res.json();
+  const container = document.getElementById('dtab-files');
+  container.innerHTML = '';
+  if(isExternal) renderLinksTab(container, vdata, docId, row['Doc Published Link']);
+  else renderFilesTab(container, vdata, docId);
+}
+
+// ── FILES TAB ──────────────────────────────────────────────
+function renderFilesTab(container, vdata, docId) {
+  const files = vdata.files || [];
+  const current = files.find(f=>f.current) || files[0];
+  const prev    = files.filter(f=>!f.current);
+
+  // Current version box
+  const box = document.createElement('div'); box.className='doc-current-box';
+  box.innerHTML = '<div class="doc-current-label">★ Current version</div>';
+  if(current) {
+    box.innerHTML += `<div class="doc-version-item">
+      <div class="doc-file-icon">📄</div>
+      <div style="flex:1"><div class="doc-file-name">${esc(current.original||current.filename)}</div>
+      <div class="doc-file-meta">${fmtSize(current.size)} · ${current.date} · ${current.author}</div></div>
+      <a class="doc-btn-icon" href="/api/doc/download/${encodeURIComponent(docId)}/${encodeURIComponent(current.filename)}" title="Download">⬇</a>
+      ${CAN_EDIT?`<div class="doc-btn-icon danger" onclick="deleteDocFile('${docId}','${current.filename}')" title="Delete">🗑</div>`:''}
+    </div>`;
+  } else {
+    box.innerHTML += '<div style="font-size:12px;color:var(--text-muted);font-style:italic">No file uploaded yet.</div>';
+  }
+  if(CAN_EDIT) {
+    box.innerHTML += `<div class="doc-upload-zone" onclick="document.getElementById('doc-file-input').click()">
+      <div style="font-size:24px">☁️</div>
+      <p><strong>Click to upload</strong> or drag & drop a new version</p>
+      <p>PDF, DOCX, XLSX · max 50 MB</p>
+    </div>
+    <input type="file" id="doc-file-input" style="display:none" accept=".pdf,.docx,.xlsx,.pptx,.doc,.xls"
+      onchange="uploadDocFile('${docId}', this)">`;
+  }
+  container.appendChild(box);
+
+  // Previous versions
+  if(prev.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = '<div class="doc-section-title">Previous versions</div>';
+    prev.forEach(v => {
+      sec.innerHTML += `<div class="doc-version-item">
+        <div class="doc-file-icon" style="width:28px;height:28px;font-size:14px">📄</div>
+        <div style="flex:1"><div class="doc-file-name" style="font-size:11px">${esc(v.original||v.filename)}</div>
+        <div class="doc-file-meta">${fmtSize(v.size)} · ${v.date} · ${v.author}</div></div>
+        <a class="doc-btn-icon" href="/api/doc/download/${encodeURIComponent(docId)}/${encodeURIComponent(v.filename)}" title="Download">⬇</a>
+        ${CAN_EDIT?`<div class="doc-btn-icon" onclick="restoreDocFile('${docId}','${v.filename}')" title="Restore as current">↩</div>
+        <div class="doc-btn-icon danger" onclick="deleteDocFile('${docId}','${v.filename}')" title="Delete">🗑</div>`:''}
+      </div>`;
+    });
+    container.appendChild(sec);
+  }
+}
+
+async function uploadDocFile(docId, input) {
+  const file = input.files[0]; if(!file) return;
+  const fd = new FormData(); fd.append('file', file);
+  const res = await fetch('/api/doc/upload/' + encodeURIComponent(docId), {method:'POST', body:fd});
+  if(res.ok) { alert('✅ File uploaded!'); await loadDocTab('files', _docRow, false); }
+  else alert('Upload failed');
+  input.value='';
+}
+async function deleteDocFile(docId, filename) {
+  if(!confirm('Delete this file?')) return;
+  await fetch('/api/doc/delete-file/' + encodeURIComponent(docId) + '/' + encodeURIComponent(filename), {method:'POST'});
+  await loadDocTab('files', _docRow, false);
+}
+async function restoreDocFile(docId, filename) {
+  await fetch('/api/doc/restore-file/' + encodeURIComponent(docId) + '/' + encodeURIComponent(filename), {method:'POST'});
+  await loadDocTab('files', _docRow, false);
+}
+
+// ── LINKS TAB ─────────────────────────────────────────────
+function renderLinksTab(container, vdata, docId, currentLink) {
+  const links = vdata.links || [];
+  const cur   = links.find(l=>l.current) || (currentLink ? {url:currentLink, date:'—', author:'—', current:true} : null);
+  const prev  = links.filter(l=>!l.current);
+
+  const box = document.createElement('div'); box.className='doc-current-box';
+  box.innerHTML = '<div class="doc-current-label">🔗 Current link</div>';
+  if(cur) {
+    box.innerHTML += `<div class="doc-version-item">
+      <div style="flex:1"><div class="doc-file-name" style="font-size:11px;word-break:break-all">${esc(cur.url)}</div>
+      <div class="doc-file-meta">${cur.date} · ${cur.author}</div></div>
+      <a class="doc-btn-icon" href="${esc(cur.url)}" target="_blank" rel="noopener" title="Open">↗</a>
+    </div>`;
+  }
+  if(CAN_EDIT) {
+    box.innerHTML += `<div class="doc-section-title" style="margin-top:10px">Add / update link</div>
+    <div class="doc-link-input">
+      <input type="url" id="doc-new-link" placeholder="https://...">
+      <button class="btn-primary" style="white-space:nowrap" onclick="addDocLink('${docId}')">Save link</button>
+    </div>`;
+  }
+  container.appendChild(box);
+
+  if(prev.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = '<div class="doc-section-title">Previous links</div>';
+    prev.forEach(l => {
+      sec.innerHTML += `<div class="doc-version-item">
+        <div style="flex:1;min-width:0"><div class="doc-file-name" style="font-size:11px;word-break:break-all">${esc(l.url)}</div>
+        <div class="doc-file-meta">${l.date} · ${l.author}</div></div>
+        <a class="doc-btn-icon" href="${esc(l.url)}" target="_blank" rel="noopener">↗</a>
+        ${CAN_EDIT?`<div class="doc-btn-icon" onclick="restoreDocLink('${docId}','${esc(l.url).replace(/'/g,"\'")}')">↩</div>
+        <div class="doc-btn-icon danger" onclick="deleteDocLink('${docId}','${esc(l.url).replace(/'/g,"\'")}')">🗑</div>`:''}
+      </div>`;
+    });
+    container.appendChild(sec);
+  }
+}
+
+async function addDocLink(docId) {
+  const url = document.getElementById('doc-new-link').value.trim();
+  if(!url) return;
+  await fetch('/api/doc/add-link/'+encodeURIComponent(docId), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})});
+  await loadDocTab('files', _docRow, true);
+}
+async function deleteDocLink(docId, url) {
+  if(!confirm('Delete this link?')) return;
+  await fetch('/api/doc/delete-link/'+encodeURIComponent(docId), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})});
+  await loadDocTab('files', _docRow, true);
+}
+async function restoreDocLink(docId, url) {
+  await fetch('/api/doc/restore-link/'+encodeURIComponent(docId), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url})});
+  await loadDocTab('files', _docRow, true);
+}
+
+// ── INFO TAB ──────────────────────────────────────────────
+function buildDocInfo(row) {
+  const c = document.getElementById('dtab-info');
+  const skip = new Set(['Doc Name (EN)','Doc Name (FR)','List Name']);
+  let html = '<div class="doc-info-grid">';
+  Object.entries(row).forEach(([k,v]) => {
+    if(skip.has(k) || !v || v==='nan') return;
+    const full = k==='Content Description' || String(v).length>60;
+    html += `<div class="doc-info-field ${full?'full':''}">
+      <div class="doc-info-label">${esc(k)}</div>
+      <div class="doc-info-val">${esc(String(v))}</div>
+    </div>`;
+  });
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+// ── EDIT TAB ──────────────────────────────────────────────
+function buildDocEdit(row) {
+  const c = document.getElementById('dtab-edit');
+  if(!CAN_EDIT) { c.innerHTML='<p style="color:var(--text-muted);font-size:13px;font-style:italic">You do not have permission to edit.</p>'; return; }
+  const editableCols = ['Status','Owner Team','Author Team','Contact Team','Default Language','Periodicity','Published Date','Next Review Date','Content Description'];
+  let html = '';
+  editableCols.forEach(col => {
+    const val = row[col] || '';
+    const isDate = col.includes('Date');
+    const isLong = col==='Content Description';
+    html += `<div class="doc-edit-field"><label>${esc(col)}</label>`;
+    if(isLong)   html += `<textarea rows="3" data-col="${esc(col)}">${esc(val)}</textarea>`;
+    else if(col==='Status') html += `<select data-col="Status"><option ${val==='Draft'?'selected':''}>Draft</option><option ${val==='Under Review'?'selected':''}>Under Review</option><option ${val==='Approved'?'selected':''}>Approved</option><option ${val==='Archived'?'selected':''}>Archived</option><option ${val==='Superseded'?'selected':''}>Superseded</option></select>`;
+    else         html += `<input type="${isDate?'date':'text'}" data-col="${esc(col)}" value="${esc(val)}">`;
+    html += '</div>';
+  });
+  c.innerHTML = html;
+}
+
+async function saveDocEdit() {
+  if(!_docRow) return;
+  const updates = {};
+  document.querySelectorAll('#dtab-edit [data-col]').forEach(el => {
+    updates[el.dataset.col] = el.value;
+  });
+  await fetch('/api/catalog/update', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({list_name: _docRow['List Name'], id: _docRow['ID'], updates})
+  });
+  alert('✅ Saved!');
+  closeDocModal();
+  loadData();
+}
+
+function fmtSize(bytes) {
+  if(!bytes) return '—';
+  if(bytes < 1024) return bytes + ' B';
+  if(bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1048576).toFixed(1) + ' MB';
+}
+
 initPlatformPanel();
 loadData().then(setTableHeight);
 
