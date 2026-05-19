@@ -95,6 +95,16 @@ def load_data_catalog():
     df["List Name"] = "Data Catalog"
     return df.to_dict("records")
 
+def load_multiple_media():
+    """Load Multiple Media data from multiple_media.csv"""
+    path = f"{CD}/multiple_media.csv"
+    if not os.path.exists(path):
+        return []
+    df = csv_read(path)
+    if df.empty: return []
+    df["List Name"] = "Multiple Media"
+    return df.to_dict("records")
+
 def get_custom_cols(rows):
     result = {}
     for row in rows:
@@ -162,18 +172,20 @@ def ctx():
         all_rows      = load_all_catalog()
         catalog_count      = len(all_rows)
         doc_count          = len(load_doc_catalog())
-        data_catalog_count = len(load_data_catalog())
+        data_catalog_count  = len(load_data_catalog())
+        media_count         = len(load_multiple_media())
         emp_count     = len(csv_read(f"{MD}/employees.csv"))
         faq_count     = len(csv_read(f"{PD}/faq.csv"))
         ev_count      = len(csv_read(f"{PD}/events.csv"))
     except:
-        catalog_count = emp_count = faq_count = ev_count = doc_count = data_catalog_count = 0
+        catalog_count = emp_count = faq_count = ev_count = doc_count = data_catalog_count = media_count = 0
     return {
         "user": u,
         "notif_count": notif_count(u),
         "catalog_count":      catalog_count,
         "doc_count":          doc_count,
         "data_catalog_count": data_catalog_count,
+        "media_count":         media_count,
         "emp_count": emp_count,
         "faq_count": faq_count,
         "ev_count": ev_count,
@@ -283,6 +295,29 @@ def dochub():
         date_min        = dates[0]  if dates else "2022-01-01",
         date_max        = dates[-1] if dates else "2025-12-31",
         **ctx())
+
+@app.route("/multiplemedia")
+@login_required
+def multiplemedia():
+    import json as _json
+    rows = load_multiple_media()
+    plats = sorted(set(
+        p.strip() for r in rows
+        for p in str(r.get("Platform","")).split(";") if p.strip()
+    ))
+    dates = sorted([r.get("Published Date","") for r in rows if r.get("Published Date","")])
+    return render_template("multiplemedia.html",
+        rows_json       = _json.dumps(clean(rows)),
+        platforms_json  = _json.dumps(plats),
+        date_min        = dates[0]  if dates else "2023-01-01",
+        date_max        = dates[-1] if dates else "2025-12-31",
+        **ctx())
+
+@app.route("/api/multiplemedia")
+@login_required
+def api_multiplemedia():
+    rows = load_multiple_media()
+    return jsonify({"rows": clean(rows)})
 
 @app.route("/pole")
 @login_required

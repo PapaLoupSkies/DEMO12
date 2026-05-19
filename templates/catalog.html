@@ -4,6 +4,90 @@
 {% block extra_head %}
 <style>
   /* View toggle */
+
+
+  /* ── Feed card v2 ── */
+  .feed-card-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+  /* Details toggle */
+  .det-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:4px 10px; border-radius:7px; border:1px solid var(--border); background:var(--white); color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif; font-weight:500; transition:all .15s; user-select:none; }
+  .det-badge:hover, .det-badge.open { border-color:#185FA5; background:#E6F1FB; color:#0C447C; }
+  .det-chev { font-size:10px; transition:transform .2s; display:inline-block; }
+  .det-badge.open .det-chev { transform:rotate(180deg); }
+  /* Contained Items toggle */
+  .ci-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; padding:4px 10px; border-radius:7px; border:1px solid var(--border); background:var(--white); color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif; font-weight:500; transition:all .15s; user-select:none; }
+  .ci-badge.has-items { border-color:#B5D4F4; background:#E6F1FB; color:#0C447C; }
+  .ci-badge.open { border-color:#185FA5; background:#185FA5; color:#fff; }
+  .ci-badge .ci-n { font-weight:700; background:#185FA5; color:#fff; border-radius:10px; padding:0 5px; font-size:10px; }
+  .ci-badge.open .ci-n { background:rgba(255,255,255,.3); }
+  .ci-badge.open .det-chev { transform:rotate(180deg); }
+  /* Link button */
+  .feed-act-btn.link { border-color:#B5D4F4; background:#E6F1FB; color:#0C447C; font-weight:500; text-decoration:none; }
+  .feed-act-btn.link:hover { background:#185FA5; color:#fff; border-color:#185FA5; }
+  /* Details panel */
+  .det-panel { margin-top:8px; background:var(--bg); border:0.5px solid var(--border); border-radius:9px; padding:12px 14px; }
+  .det-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 16px; }
+  .det-field { display:flex; flex-direction:column; gap:2px; }
+  .det-field.full { grid-column:1/-1; }
+  .det-field-label { font-size:9px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+  .det-field-val { font-size:11px; color:var(--text); display:flex; flex-wrap:wrap; gap:3px; }
+  .det-chip { font-size:10px; padding:1px 7px; border-radius:20px; background:var(--white); border:0.5px solid var(--border); color:var(--text-muted); }
+  .det-chip-team { background:#E1F5EE; color:#085041; }
+  .det-link { font-size:11px; color:#185FA5; display:inline-flex; align-items:center; gap:3px; text-decoration:none; }
+  .det-link:hover { text-decoration:underline; }
+  /* Contained items inline */
+  .ci-panel-inline { margin-top:8px; background:#E6F1FB; border:0.5px solid #B5D4F4; border-radius:9px; padding:11px 13px; }
+  .ci-panel-title { font-size:11px; font-weight:500; color:#0C447C; margin-bottom:7px; }
+  .ci-item-row { display:flex; align-items:center; gap:8px; padding:6px 9px; background:var(--white); border:0.5px solid var(--border); border-radius:7px; margin-bottom:4px; }
+  .ci-item-row:last-child { margin-bottom:0; }
+  .ci-item-name { font-size:12px; font-weight:500; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ci-item-ver { font-size:10px; color:var(--text-muted); margin-left:3px; }
+  .ci-src-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; padding:2px 7px; border-radius:20px; font-weight:500; text-decoration:none; flex-shrink:0; }
+  .ci-src-doc { background:#E6F1FB; color:#0C447C; border:0.5px solid #B5D4F4; }
+  .ci-src-mm  { background:#EEEDFE; color:#3C3489; border:0.5px solid #CECBF6; }
+
+  /* Filter panel reset */
+  .sfp-grid { list-style:none; }
+  .sfp-dd-list { list-style:none; }
+  .sfp-dd-item { list-style:none; }
+  .sfp-dd-item * { list-style:none; }
+  .shared-filter-panel .sfp-field { list-style:none; }
+  /* ── Feed View ── */
+  .feed-hero { padding: 24px 18px 14px; background: var(--white); border-bottom: 1px solid var(--border); }
+  .feed-hero-title { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 12px; }
+  .feed-search-big { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--bg); border: 1.5px solid var(--border); border-radius: 28px; margin-bottom: 12px; transition: border-color .2s, box-shadow .2s; }
+  .feed-search-big:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(0,107,94,.1); }
+  .feed-search-big svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--text-muted); }
+  .feed-search-big input { flex: 1; border: none; background: transparent; font-size: 14px; color: var(--text); outline: none; font-family: 'Inter',sans-serif; }
+  .feed-search-big input::placeholder { color: var(--text-muted); }
+  .feed-controls { padding: 8px 18px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .feed-body { padding: 14px 18px; overflow-y: auto; }
+  .feed-item { display: flex; gap: 12px; margin-bottom: 12px; }
+  .feed-timeline-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 4px; }
+  .feed-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .feed-line { flex: 1; width: 1.5px; background: var(--border); margin-top: 4px; min-height: 24px; }
+  .feed-card { flex: 1; background: var(--white); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px; cursor: default; transition: border-color .15s, box-shadow .15s; }
+  .feed-card:hover { border-color: var(--accent); box-shadow: 0 2px 8px rgba(0,107,94,.07); }
+  .feed-card-hdr { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .feed-card-title { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .feed-card-date { font-size: 10px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
+  .feed-card-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 7px; }
+  .feed-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-bottom: 7px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .feed-card-chips { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .feed-chip { font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500; }
+  .feed-chip-plat { background: var(--accent-light); color: #0a5a4e; }
+  .feed-chip-type { background: #ede9fb; color: #3c3489; }
+  .feed-chip-status-pub  { background: #e8f5ee; color: #1a6b3c; }
+  .feed-chip-status-dft  { background: #fdf3e0; color: #8a5e15; }
+  .feed-chip-status-rev  { background: #e6f1fb; color: #185FA5; }
+  .feed-chip-status-arch { background: var(--bg); color: var(--text-muted); }
+  .feed-card-actions { display: flex; gap: 6px; align-items: center; }
+  .feed-act-btn { font-size: 10px; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); background: none; color: var(--text-muted); cursor: pointer; font-family: 'Inter',sans-serif; transition: all .15s; }
+  .feed-act-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .feed-act-btn.reuse { border-color: #e8c880; background: #fdf3e0; color: #8a5e15; font-weight: 600; }
+  .feed-act-btn.view  { border-color: var(--accent); background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .feed-act-btn.report{ border-color: #f0b8b4; background: #fdecea; color: var(--red); }
+  .feed-no-results { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  #section-feed { display:flex; flex-direction:column; height:calc(100vh - 56px); overflow:hidden; }
   .view-toggle-bar {
     background: var(--white); border-bottom: 1px solid var(--border);
     padding: 8px 18px; display: flex; align-items: center; gap: 10px;
@@ -15,7 +99,7 @@
   .view-sep { width: 1px; height: 22px; background: var(--border); }
 
   /* Section visibility */
-  #section-list { display: block; }
+  #section-list { display: none !important; }
   #section-card { display: none; }
 
 
@@ -112,8 +196,8 @@ const KB_DATE_MAX  = "{{ date_max }}";
 {# ── Toggle bar ── #}
 <div class="view-toggle-bar">
   <div class="view-toggle">
-    <button class="vbtn active" id="vbtn-list" onclick="switchView('list')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    <button class="vbtn active" id="vbtn-feed" onclick="switchView('feed')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h10M4 18h7"/></svg>
       Library View
     </button>
     <button class="vbtn" id="vbtn-card" onclick="switchView('card')">
@@ -158,6 +242,7 @@ const KB_DATE_MAX  = "{{ date_max }}";
   <div class="count-badge"><span id="result-count">—</span> résultat(s)</div>
 </div>
 
+<div class="shared-filter-panel" id="sfp-catalog-lib"></div>
 <div class="active-col-filters" id="active-col-filters">
   <span class="acf-label">Column filters:</span>
   <span id="acf-chips"></span>
@@ -182,6 +267,8 @@ const KB_DATE_MAX  = "{{ date_max }}";
     <button class="pg-btn" id="pg-next" onclick="goPage(currentPage+1)">Suiv. →</button>
   </div>
 </div>
+
+</div>{# fin #section-list #}
 
 <div class="modal-overlay" id="reuse-modal">
   <div class="modal" onclick="event.stopPropagation()">
@@ -214,7 +301,40 @@ const KB_DATE_MAX  = "{{ date_max }}";
     </div>
   </div>
 </div>
-</div>{# fin #section-list #}
+
+{# ── SECTION FEED VIEW ── #}
+<div id="section-feed">
+  <div class="feed-hero">
+    <div class="feed-hero-title">Content Hub</div>
+    <div class="feed-search-big">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="feed-search" placeholder="Search contents, topics, teams, platforms...">
+    </div>
+    <button class="shared-filter-btn" data-panel="sfp-catalog" onclick="toggleSharedPanel('sfp-catalog',this)" style="padding:8px 14px;border-radius:8px;font-size:12px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filters <span class="shared-filter-badge"></span>
+    </button>
+  </div>
+  <div class="shared-filter-panel" id="sfp-catalog"></div>
+  <div class="feed-controls">
+    <span id="feed-count" style="font-size:12px;color:var(--text-muted)">— results</span>
+    <div style="flex:1"></div>
+    <select id="feed-sort" onchange="renderFeed()" style="font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;outline:none;">
+      <option value="date-desc">Newest first</option>
+      <option value="date-asc">Oldest first</option>
+      <option value="name-asc">Name A→Z</option>
+    </select>
+  </div>
+  <div class="feed-body" id="feed-body"></div>
+<div class="mm-pg-bar" id="feed-pg-bar" style="display:none">
+  <div class="mm-pg-info" id="feed-pg-info"></div>
+  <div class="mm-pg-btns">
+    <button class="mm-pg-btn" id="feed-pg-prev" onclick="feedGoPage(_feedPage-1)">← Préc.</button>
+    <div class="mm-pg-btns" id="feed-pg-pages"></div>
+    <button class="mm-pg-btn" id="feed-pg-next" onclick="feedGoPage(_feedPage+1)">Suiv. →</button>
+  </div>
+</div>
+</div>
 
 {# ── SECTION CARD VIEW ── #}
 <div id="section-card">
@@ -339,6 +459,10 @@ async function loadData() {
   document.getElementById('loading').style.display='none';
   document.getElementById('main-table').style.display='';
   buildHeader(); updateAllFilters(); render(); setTableHeight();
+  buildSharedFilterPanel(ALL_DATA, ["ID","List Name","Content Name (EN)","Content Name (FR)","Content Description","Content Published Link","Instance Name (EN | FR)","Creation Date","Published Date","Last Update Date","Next Review Date","Content Version"], "sfp-catalog", onSFP_cat);
+  buildSharedFilterPanel(ALL_DATA, ["ID","List Name","Content Name (EN)","Content Name (FR)","Content Description","Content Published Link","Instance Name (EN | FR)","Creation Date","Published Date","Last Update Date","Next Review Date","Content Version"], "sfp-catalog-lib", onSFP_catlib);
+  if(document.getElementById('section-feed') && document.getElementById('section-feed').style.display !== 'none') renderFeed();
+  else { const _fReady = setInterval(()=>{ if(document.getElementById('section-feed')) { renderFeed(); clearInterval(_fReady); }}, 100); }
 }
 
 // (Sets déjà déclarés en haut)
@@ -906,25 +1030,263 @@ async function submitReport() {
 }
 document.getElementById('report-modal').addEventListener('click', closeReportModal);
 
+
+
+// ── Shared filter panel ──
+let _sfpFilters_cat = {}; let _sfpTextFilters_cat = {};
+let _sfpFilters_catlib = {}; let _sfpTextFilters_catlib = {};
+function onSFP_cat(af, tf) { _sfpFilters_cat = af; _sfpTextFilters_cat = tf||{}; renderFeed(); }
+function onSFP_catlib(af, tf) { _sfpFilters_catlib = af; _sfpTextFilters_catlib = tf||{}; render(); }
+
+// ── Feed card toggle helpers ──────────────────────────────
+function fcToggleDet(rowId, btn) {
+  const panel = document.getElementById('det_'+rowId);
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.classList.toggle('open', open);
+}
+
+function fcToggleCI(rowId, btn) {
+  const panel = document.getElementById('ci_'+rowId);
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  btn.classList.toggle('open', open);
+}
+
+function buildFcDetails(row, rowId, q) {
+  const panel = document.getElementById('det_'+rowId);
+  if (!panel) return;
+  const skip = new Set(['ID','List Name','Content Name (EN)','Content Name (FR)','Content Description','Published Date','Last Update Date','Creation Date','Next Review Date']);
+  let html = '<div class="det-grid">';
+  Object.entries(row).forEach(([col, val]) => {
+    if (skip.has(col) || !val || val==='nan') return;
+    const full = col==='Content Published Link'||col==='Activities'||col==='Audience'||col==='Key Words'||col.startsWith('Content -');
+    const isLink = col==='Content Published Link' && /^https?:\/\//.test(String(val));
+    const isDate = /^\d{4}-\d{2}-\d{2}/.test(String(val)) && col.toLowerCase().includes('date');
+    let valHtml = '';
+    if (isLink) valHtml = `<a class="det-link" href="${esc(val)}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>${esc(String(val).replace(/^https?:\/\//, ''))}</a>`;
+    else if (isDate) valHtml = `<span style="font-size:11px">📅 ${formatDate(val)}</span>`;
+    else {
+      const teamCols = new Set(['Owner Team','Author Team','Contact Team']);
+      String(val).split(';').forEach(v => {
+        v = v.trim(); if(!v) return;
+        const cls = teamCols.has(col) ? 'det-chip det-chip-team' : 'det-chip';
+        valHtml += `<span class="${cls}">${esc(v)}</span>`;
+      });
+    }
+    if (valHtml) html += `<div class="det-field${full?' full':''}"><div class="det-field-label">${esc(col)}</div><div class="det-field-val">${valHtml}</div></div>`;
+  });
+  // Dates always shown
+  ['Published Date','Last Update Date'].forEach(col => {
+    if (row[col]&&row[col]!=='nan') html += `<div class="det-field"><div class="det-field-label">${esc(col)}</div><div class="det-field-val"><span style="font-size:11px">📅 ${esc(formatDate(row[col]))}</span></div></div>`;
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function formatDate(d){try{return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}}
+// ── Feed View ────────────────────────────────────────────────
+let _feedInited = false;
+const FEED_PAGE_SIZE = 25;
+let _feedPage = 1;
+let _feedAll = [];
+let _feedRows = {};
+
+function initFeed() {
+  if(_feedInited) return;
+  _feedInited = true;
+  document.getElementById('feed-search').addEventListener('input',
+    debounce(()=>{ renderFeed(); }, 300)
+  );
+}
+
+function getFeedDotColor(row) {
+  const t = (row['Content Types']||'').toLowerCase();
+  if(t.includes('video')) return '#A32D2D';
+  if(t.includes('news')||t.includes('newsletter')) return '#993556';
+  if(t.includes('report')||t.includes('dashboard')) return '#854F0B';
+  if(t.includes('training')||t.includes('course')) return '#3B6D11';
+  if(t.includes('presentation')) return '#185FA5';
+  return 'var(--accent)';
+}
+
+function getStatusChip(status) {
+  const s = (status||'').toLowerCase();
+  if(s.includes('publish')) return '<span class="feed-chip feed-chip-status-pub">Published</span>';
+  if(s.includes('draft'))   return '<span class="feed-chip feed-chip-status-dft">Draft</span>';
+  if(s.includes('review'))  return '<span class="feed-chip feed-chip-status-rev">Under review</span>';
+  if(s.includes('arch'))    return '<span class="feed-chip feed-chip-status-arch">Archived</span>';
+  return status ? `<span class="feed-chip feed-chip-status-arch">${esc(status)}</span>` : '';
+}
+
+function feedGoPage(p) {
+  const total = Math.ceil(_feedAll.length / FEED_PAGE_SIZE);
+  _feedPage = Math.max(1, Math.min(p, total||1));
+  const start = (_feedPage-1)*FEED_PAGE_SIZE;
+  const pageData = _feedAll.slice(start, start+FEED_PAGE_SIZE);
+  const q = (document.getElementById('feed-search').value||'').trim().toLowerCase();
+  const pgBar = document.getElementById('feed-pg-bar');
+  const totalPages = Math.ceil(_feedAll.length / FEED_PAGE_SIZE) || 1;
+  if (pgBar) {
+    document.getElementById('feed-pg-info').innerHTML = `Showing <strong>${start+1}–${Math.min(start+FEED_PAGE_SIZE,_feedAll.length)}</strong> of <strong>${_feedAll.length}</strong>`;
+    document.getElementById('feed-pg-prev').disabled = _feedPage<=1;
+    document.getElementById('feed-pg-next').disabled = _feedPage>=totalPages;
+    const pgs = document.getElementById('feed-pg-pages'); pgs.innerHTML='';
+    let s=Math.max(1,_feedPage-2),e=Math.min(totalPages,s+4); s=Math.max(1,e-4);
+    for(let i=s;i<=e;i++){const b=document.createElement('button');b.className='mm-pg-btn'+(i===_feedPage?' active':'');b.textContent=i;b.onclick=(pg=>()=>feedGoPage(pg))(i);pgs.appendChild(b);}
+  }
+  const body = document.getElementById('feed-body');
+  body.innerHTML='';
+  pageData.forEach((row, idx) => {
+    const plats=(row['Platform']||'').split(';').map(s=>s.trim()).filter(Boolean);
+    const platChips=plats.map(p=>`<span class="feed-chip feed-chip-plat">${esc(p)}</span>`).join('');
+    const statusChip=getStatusChip(row['Status']);
+    const ciCount=0;
+    const date=row['Published Date']?(()=>{try{return new Date(row['Published Date']).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return row['Published Date'];}})():'—';
+    const name=row['Content Name (EN)']||row['Content Name (FR)']||row['ID']||'—';
+    const isLast=idx===pageData.length-1;
+    const dotColor=getFeedDotColor(row);
+    const rowId=(row['ID']||'').replace(/[^a-zA-Z0-9]/g,'_')+'_'+Math.random().toString(36).slice(2,6);
+    _feedRows[rowId]=row;
+    const item=document.createElement('div'); item.className='feed-item';
+    item.innerHTML=`<div class="feed-timeline-col"><div class="feed-dot" style="background:${dotColor}"></div>${!isLast?'<div class="feed-line"></div>':''}</div><div class="feed-card" id="fc_${rowId}"><div class="feed-card-hdr"><div class="feed-card-title">${highlight(name,q)}</div><div class="feed-card-date">📅 ${esc(date)}</div></div><div class="feed-card-meta">${esc(row['Owner Team']||'—')} · ${esc(row['Primary Thematic']||row['Content Family']||'')}</div><div class="feed-card-chips">${platChips}${statusChip}</div><div class="feed-card-actions"><div class="det-badge" onclick="fcToggleDet('${rowId}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Details <i class="det-chev">▾</i></div><div class="ci-badge${ciCount>0?' has-items':''}" onclick="fcToggleCI('${rowId}',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>Contained Items ${ciCount>0?`<span class="ci-n">${ciCount}</span>`:''} ${ciCount>0?'<i class="det-chev">▾</i>':''}</div>${row['Content Published Link']&&row['Content Published Link']!=='nan'?`<a class="feed-act-btn link" href="${esc(row['Content Published Link'])}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Link</a>`:''}<button class="feed-act-btn reuse" onclick="openReuseModal(_feedRows['${rowId}'])">♻️ Reuse</button><button class="feed-act-btn report" onclick="openReportModal(_feedRows['${rowId}'])">⚑ Report</button></div><div class="det-panel" id="det_${rowId}" style="display:none"></div><div class="ci-panel-inline" id="ci_${rowId}" style="display:none"></div></div>`;
+    body.appendChild(item);
+    buildFcDetails(row, rowId, q);
+  });
+  body.scrollTop=0;
+}
+
+function renderFeed() {
+  if(!ALL_DATA||!ALL_DATA.length) return;
+  const q    = (document.getElementById('feed-search').value||'').trim().toLowerCase();
+  const sort = document.getElementById('feed-sort').value;
+  const body = document.getElementById('feed-body');
+  const U = '{{ user.username }}';
+  const T = '{{ user.owner_team|default("") }}';
+
+  let data = ALL_DATA.filter(r => {
+    if(q && !Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    return true;
+  });
+
+  data.sort((a,b) => {
+    if(sort==='date-desc') return new Date(b['Published Date']||0) - new Date(a['Published Date']||0);
+    if(sort==='date-asc')  return new Date(a['Published Date']||0) - new Date(b['Published Date']||0);
+    const na=(a['Content Name (EN)']||'').toLowerCase(), nb=(b['Content Name (EN)']||'').toLowerCase();
+    return na<nb?-1:na>nb?1:0;
+  });
+
+  data = applySharedFilters(data, _sfpFilters_cat, _sfpTextFilters_cat);
+
+  _feedAll = data;
+  _feedPage = 1;
+
+  const total = data.length;
+  const totalPages = Math.ceil(total / FEED_PAGE_SIZE) || 1;
+  const start = 0;
+  const pageData = data.slice(0, FEED_PAGE_SIZE);
+
+  document.getElementById('feed-count').textContent = total + ' result' + (total!==1?'s':'');
+
+  // Pagination bar
+  const pgBar = document.getElementById('feed-pg-bar');
+  if (pgBar) {
+    pgBar.style.display = total > FEED_PAGE_SIZE ? 'flex' : 'none';
+    if (total > FEED_PAGE_SIZE) {
+      document.getElementById('feed-pg-info').innerHTML = `Showing <strong>1–${Math.min(FEED_PAGE_SIZE,total)}</strong> of <strong>${total}</strong>`;
+      document.getElementById('feed-pg-prev').disabled = true;
+      document.getElementById('feed-pg-next').disabled = totalPages <= 1;
+      const pgs = document.getElementById('feed-pg-pages'); pgs.innerHTML='';
+      const e = Math.min(totalPages, 5);
+      for(let i=1;i<=e;i++){const b=document.createElement('button');b.className='mm-pg-btn'+(i===1?' active':'');b.textContent=i;b.onclick=(p=>()=>feedGoPage(p))(i);pgs.appendChild(b);}
+    }
+  }
+
+  if(!pageData.length) {
+    body.innerHTML = '<div class="feed-no-results">No content found. Try a different search or filter.</div>';
+    return;
+  }
+
+  body.innerHTML = '';
+  pageData.forEach((row, idx) => {
+    const plats = (row['Platform']||'').split(';').map(s=>s.trim()).filter(Boolean);
+    const platChips = plats.map(p=>`<span class="feed-chip feed-chip-plat">${esc(p)}</span>`).join('');
+    const statusChip = getStatusChip(row['Status']);
+    const ciCount = 0; // TODO: load from content_relations.json
+    const entityChip = row['Owner Team'] ? `<span class="feed-chip" style="background:var(--bg);border:0.5px solid var(--border);color:var(--text-muted)">${esc(row['Owner Team'])}</span>` : '';
+    const linkChip = (row['Content Published Link']&&row['Content Published Link']!=='nan') ? `<a class="feed-chip" href="${esc(row['Content Published Link'])}" target="_blank" rel="noopener" style="background:#e6f1fb;color:#185FA5;border:0.5px solid #b5d4f4;text-decoration:none;display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Link</a>` : '';
+    const date = row['Published Date'] ? (() => { try { return new Date(row['Published Date']).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); } catch(e){ return row['Published Date']; }})() : '—';
+    const name = row['Content Name (EN)'] || row['Content Name (FR)'] || row['ID'] || '—';
+    const desc = row['Content Description'] || '';
+    const isLast = idx === pageData.length - 1;
+    const dotColor = getFeedDotColor(row);
+
+    const item = document.createElement('div');
+    item.className = 'feed-item';
+
+    const rowId = (row['ID']||'').replace(/[^a-zA-Z0-9]/g,'_')+'_'+Math.random().toString(36).slice(2,6);
+    _feedRows[rowId] = row;
+
+    item.innerHTML = `
+      <div class="feed-timeline-col">
+        <div class="feed-dot" style="background:${dotColor}"></div>
+        ${!isLast ? '<div class="feed-line"></div>' : ''}
+      </div>
+      <div class="feed-card" id="fc_${rowId}">
+        <div class="feed-card-hdr">
+          <div class="feed-card-title">${highlight(name, q)}</div>
+          <div class="feed-card-date">📅 ${esc(date)}</div>
+        </div>
+        <div class="feed-card-meta">${esc(row['Owner Team']||'—')} · ${esc(row['Primary Thematic']||row['Content Family']||'')}</div>
+        <div class="feed-card-chips">${platChips}${statusChip}</div>
+        <div class="feed-card-actions">
+          <div class="det-badge" onclick="fcToggleDet('${rowId}',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Details <i class="det-chev">▾</i>
+          </div>
+          <div class="ci-badge${ciCount>0?' has-items':''}" onclick="fcToggleCI('${rowId}',this)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            Contained Items ${ciCount>0?`<span class="ci-n">${ciCount}</span>`:''} ${ciCount>0?'<i class="det-chev">▾</i>':''}
+          </div>
+          ${row['Content Published Link']&&row['Content Published Link']!=='nan'
+            ? `<a class="feed-act-btn link" href="${esc(row['Content Published Link'])}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Link</a>`
+            : ''}
+          <button class="feed-act-btn reuse" onclick="openReuseModal(_feedRows['${rowId}'])">♻️ Reuse</button>
+          <button class="feed-act-btn report" onclick="openReportModal(_feedRows['${rowId}'])">⚑ Report</button>
+        </div>
+        <div class="det-panel" id="det_${rowId}" style="display:none"></div>
+        <div class="ci-panel-inline" id="ci_${rowId}" style="display:none"></div>
+      </div>`;
+    body.appendChild(item);
+
+    // Pre-build Details panel
+    buildFcDetails(row, rowId, q);
+  });
+}
+
+// Patch loadData to also trigger feed render
+const _origBuildHeader = buildHeader;
+
 // ── View toggle ──
 function switchView(v) {
-  const isList = v === 'list';
-  document.getElementById('section-list').style.display = isList ? 'block' : 'none';
-  document.getElementById('section-card').style.display = isList ? 'none'  : 'block';
-  document.getElementById('vbtn-list').classList.toggle('active', isList);
-  document.getElementById('vbtn-card').classList.toggle('active', !isList);
-  // Met à jour l'URL sans recharger
+  ['feed','card'].forEach(name => {
+    const sec = document.getElementById('section-'+name);
+    if(sec) sec.style.display = (name===v) ? 'block' : 'none';
+    const btn = document.getElementById('vbtn-'+name);
+    if(btn) btn.classList.toggle('active', name===v);
+  });
   const url = new URL(window.location);
-  if (isList) url.searchParams.delete('view');
-  else        url.searchParams.set('view','card');
+  if(v==='feed') url.searchParams.delete('view');
+  else url.searchParams.set('view', v);
   history.replaceState(null,'',url);
-  // Init card view au 1er affichage
-  if (!isList && typeof window.kbInit === 'function' && !window._kbInited) {
-    window._kbInited = true;
-    window.kbInit();
+  if(v==='card' && typeof window.kbInit === 'function' && !window._kbInited) {
+    window._kbInited = true; window.kbInit();
   }
+  if(v==='feed') initFeed();
 }
 // Auto-switch si ?view=card dans l'URL
-if (new URLSearchParams(window.location.search).get('view') === 'card') switchView('card');
+const _urlView = new URLSearchParams(window.location.search).get('view');
+if(_urlView==='card') switchView('card');
+else initFeed();
 </script>
 {% endblock %}

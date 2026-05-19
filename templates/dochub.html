@@ -160,6 +160,10 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
     <input type="text" id="search" placeholder="Search all content...">
   </div>
+  <button class="shared-filter-btn" data-panel="sfp-dochub" onclick="toggleSharedPanel('sfp-dochub',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+    Filters <span class="shared-filter-badge"></span>
+  </button>
   <div id="dd-category-wrap" style="position:relative;display:inline-block">
     <button class="dd-filter-btn" id="dd-category-btn" onclick="toggleDd('category')">Thematic ▾</button>
     <div class="dd-filter-panel" id="dd-category-panel"></div>
@@ -183,6 +187,7 @@
   <div class="count-badge"><span id="result-count">—</span> résultat(s)</div>
 </div>
 
+<div class="shared-filter-panel" id="sfp-dochub"></div>
 <div class="active-col-filters" id="active-col-filters">
   <span class="acf-label">Column filters:</span>
   <span id="acf-chips"></span>
@@ -267,6 +272,10 @@ let currentPage = 1;
 function debounce(fn, delay) {
   let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
 }
+
+// ── Shared filter panel ──
+let _sfpFilters_sfp_dochub = {}; let _sfpTextFilters_sfp_dochub = {};
+function onSFP_sfp_dochub(af, tf) { _sfpFilters_sfp_dochub = af; _sfpTextFilters_sfp_dochub = tf||{}; render(); }
 // ── Highlight search terms ──
 let _currentQ = '';
 function highlight(text, q) {

@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block title %}Multiple Media{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Multiple Media ── */
+  #section-mm { display:block; }
+  .mm-hero { padding:18px 20px 14px; background:var(--white); border-bottom:1px solid var(--border); }
+  .mm-hero-title { font-size:17px; font-weight:600; color:var(--text); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .mm-hero-title svg { width:20px; height:20px; color:#534AB7; }
+  .mm-search-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .mm-search-wrap { flex:1; display:flex; align-items:center; gap:10px; padding:9px 16px; background:var(--bg); border:1.5px solid var(--border); border-radius:28px; transition:border-color .2s,box-shadow .2s; }
+  .mm-search-wrap:focus-within { border-color:#534AB7; box-shadow:0 0 0 4px #EEEDFE; }
+  .mm-search-wrap svg { width:16px; height:16px; color:var(--text-muted); flex-shrink:0; }
+  .mm-search-wrap input { flex:1; border:none; background:transparent; font-size:14px; color:var(--text); outline:none; font-family:'Inter',sans-serif; }
+  .mm-search-wrap input::placeholder { color:var(--text-muted); }
+  .mm-filter-btn { display:flex; align-items:center; gap:6px; padding:9px 16px; border:1.5px solid var(--border); border-radius:28px; background:var(--white); cursor:pointer; font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap; transition:all .15s; flex-shrink:0; font-family:'Inter',sans-serif; }
+  .mm-filter-btn:hover, .mm-filter-btn.open { border-color:#534AB7; color:#534AB7; background:#EEEDFE; }
+  .mm-filter-badge { background:#534AB7; color:#fff; border-radius:10px; padding:1px 6px; font-size:10px; font-weight:700; display:none; }
+  .mm-filter-badge.show { display:inline; }
+  .mm-controls { display:flex; align-items:center; gap:8px; }
+  .mm-count { font-size:12px; color:var(--text-muted); flex:1; }
+  .mm-sort { font-size:11px; padding:4px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; outline:none; }
+
+  /* Filter Panel */
+  .mm-filter-panel { padding:14px 20px 10px; background:var(--bg); border-bottom:1px solid var(--border); display:none; }
+  .mm-filter-panel.open { display:block; }
+  .mm-fp-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .mm-fp-title { font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.06em; }
+  .mm-fp-clear { font-size:11px; color:#534AB7; cursor:pointer; font-weight:600; background:none; border:none; font-family:'Inter',sans-serif; }
+  .mm-fp-clear:hover { text-decoration:underline; }
+  .mm-fp-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; }
+  .mm-fp-field { display:flex; flex-direction:column; gap:5px; }
+  .mm-fp-label { font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:.05em; }
+  .mm-fp-search { padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:'Inter',sans-serif; outline:none; background:var(--white); color:var(--text); width:100%; margin-bottom:3px; }
+  .mm-fp-search:focus { border-color:#534AB7; }
+  .mm-fp-tags { display:flex; flex-wrap:wrap; gap:3px; max-height:72px; overflow-y:auto; }
+  .mm-fp-tag { font-size:10px; padding:3px 8px; border-radius:20px; border:0.5px solid var(--border); background:var(--white); cursor:pointer; color:var(--text-muted); transition:all .12s; white-space:nowrap; }
+  .mm-fp-tag:hover { border-color:#534AB7; color:#534AB7; }
+  .mm-fp-tag.sel { background:#EEEDFE; border-color:#534AB7; color:#3C3489; font-weight:600; }
+  .mm-fp-tag.hidden { display:none; }
+
+  /* Feed */
+  .mm-body { padding:14px 20px; overflow-y:auto; }
+  .mm-item { display:flex; gap:10px; margin-bottom:10px; }
+  .mm-tl { display:flex; flex-direction:column; align-items:center; flex-shrink:0; padding-top:4px; }
+  .mm-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+  .mm-line { flex:1; width:1.5px; background:var(--border); margin-top:4px; min-height:20px; }
+  .mm-card { flex:1; background:var(--white); border:1px solid var(--border); border-radius:10px; padding:10px 14px; transition:border-color .15s, box-shadow .15s; }
+  .mm-card:hover { border-color:#534AB7; box-shadow:0 2px 8px rgba(83,74,183,.07); }
+  .mm-card-hdr { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; margin-bottom:3px; }
+  .mm-card-title { font-size:13px; font-weight:600; color:var(--text); line-height:1.4; }
+  .mm-card-date { font-size:10px; color:var(--text-muted); white-space:nowrap; flex-shrink:0; }
+  .mm-card-meta { font-size:11px; color:var(--text-muted); margin-bottom:6px; }
+  .mm-card-desc { font-size:11px; color:var(--text-muted); line-height:1.5; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mm-chips { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:7px; }
+  .mm-chip { font-size:10px; padding:2px 7px; border-radius:20px; font-weight:500; }
+  .mm-chip-plat { background:#E1F5EE; color:#085041; }
+  .mm-chip-type { background:#EEEDFE; color:#3C3489; }
+  .mm-chip-aud  { background:#FBEAF0; color:#72243E; }
+  .mm-chip-pub  { background:#EAF3DE; color:#27500A; }
+  .mm-chip-dft  { background:#FAEEDA; color:#633806; }
+  .mm-chip-rev  { background:#E6F1FB; color:#0C447C; }
+  .mm-chip-arch { background:var(--bg); color:var(--text-muted); }
+  .mm-chip-cont { background:#E1F5EE; color:#085041; }
+  .mm-actions { display:flex; gap:5px; }
+  .mm-btn { font-size:10px; padding:3px 9px; border-radius:6px; border:1px solid var(--border); background:none; color:var(--text-muted); cursor:pointer; font-family:'Inter',sans-serif; transition:all .15s; text-decoration:none; display:inline-flex; align-items:center; gap:4px; }
+  .mm-btn:hover { border-color:#534AB7; color:#534AB7; background:#EEEDFE; }
+  .mm-btn.reuse { border-color:#e8c880; background:#fdf3e0; color:#8a5e15; font-weight:600; }
+  .mm-btn.view  { border-color:#534AB7; background:#EEEDFE; color:#3C3489; font-weight:600; }
+  .mm-btn.report{ border-color:#f0b8b4; background:#fdecea; color:var(--red); }
+  .mm-empty { text-align:center; padding:48px; color:var(--text-muted); font-size:14px; }
+  .mm-pg-bar { display:flex; align-items:center; justify-content:center; gap:12px; padding:10px 20px; border-top:1px solid var(--border); background:var(--white); position:sticky; bottom:0; z-index:5; }
+  .mm-pg-info { font-size:12px; color:var(--text-muted); white-space:nowrap; }
+  .mm-pg-info strong { color:var(--text); }
+  .mm-pg-btns { display:flex; gap:3px; }
+  .mm-pg-btn { padding:4px 10px; border:1px solid var(--border); border-radius:6px; background:var(--bg); font-size:12px; font-family:'Inter',sans-serif; color:var(--text-muted); cursor:pointer; transition:all .15s; }
+  .mm-pg-btn:hover:not(:disabled) { border-color:#534AB7; color:#534AB7; background:#EEEDFE; }
+  .mm-pg-btn:disabled { opacity:.4; cursor:default; }
+  .mm-pg-btn.active { background:#534AB7; color:#fff; border-color:#534AB7; font-weight:600; }
+  mark { background:#fff3b0; color:var(--text); border-radius:2px; padding:0 2px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<script>
+const MM_ROWS = {{ rows_json|safe }};
+const MM_PLATS = {{ platforms_json|safe }};
+</script>
+
+<!-- Hero -->
+<div class="mm-hero">
+  <div class="mm-hero-title">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3 8 3M12 3v4"/></svg>
+    Multiple Media
+  </div>
+  <div class="mm-search-row">
+    <div class="mm-search-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="mm-search" placeholder="Search media, campaigns, platforms, themes...">
+    </div>
+    <button class="shared-filter-btn" id="mm-filter-btn" data-panel="sfp-mm" onclick="toggleSharedPanel('sfp-mm',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+      Filters
+      <span class="shared-filter-badge" id="mm-filter-badge"></span>
+    </button>
+  </div>
+  <div class="mm-controls">
+    <span class="mm-count" id="mm-count">— results</span>
+    <select class="mm-sort" id="mm-sort" onchange="mmRender()">
+      <option value="date-desc">Newest first</option>
+      <option value="date-asc">Oldest first</option>
+      <option value="name-asc">Name A→Z</option>
+    </select>
+  </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="shared-filter-panel" id="sfp-mm"></div>
+
+<!-- Pagination top info -->
+<div class="mm-pg-bar" id="mm-pg-bar" style="display:none">
+  <div class="mm-pg-info" id="mm-pg-info"></div>
+  <div class="mm-pg-btns">
+    <button class="mm-pg-btn" id="mm-pg-prev" onclick="mmGoPage(mmPage-1)">← Préc.</button>
+    <div class="mm-pg-btns" id="mm-pg-pages"></div>
+    <button class="mm-pg-btn" id="mm-pg-next" onclick="mmGoPage(mmPage+1)">Suiv. →</button>
+  </div>
+</div>
+
+<!-- Feed -->
+<div class="mm-body" id="mm-body"></div>
+
+<!-- Report modal -->
+<div class="modal-overlay" id="mm-report-modal">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>⚑ Report an Issue</h3>
+    <p id="mm-report-desc"></p>
+    <select id="mm-report-reason" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:7px;font-family:'Inter',sans-serif;font-size:12px;margin-bottom:10px;background:var(--bg);color:var(--text);outline:none;">
+      <option value="">Select a reason...</option>
+      <option>Outdated content</option><option>Incorrect information</option>
+      <option>Broken link</option><option>Missing information</option>
+      <option>Duplicate entry</option><option>Other</option>
+    </select>
+    <textarea id="mm-report-msg" placeholder="Additional details (optional)..."></textarea>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeMmReport()">Cancel</button>
+      <button class="btn-primary" style="background:var(--red);border-color:var(--red)" onclick="submitMmReport()">Send Report</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Config ──────────────────────────────────────────────────
+const MM_PAGE_SIZE = 25;
+const MM_SKIP_COLS = new Set([
+  'Content Description','Content Name (EN)','Content Name (FR)',
+  'Instance Name (EN | FR)','ID','List Name','Content Published Link'
+]);
+const MM_ACTIVE_FILTERS = {}; // col → Set of selected values
+let mmPage = 1;
+let _mmFiltered = [];
+let _mmPanelOpen = false;
+
+// ── Build filter panel ───────────────────────────────────────
+function buildMMFilterPanel() {
+  const panel = document.getElementById('mm-filter-panel');
+  // Collect filterable columns
+  const colValues = {};
+  MM_ROWS.forEach(row => {
+    Object.entries(row).forEach(([col, val]) => {
+      if (MM_SKIP_COLS.has(col)) return;
+      if (!val || val === 'nan') return;
+      if (!colValues[col]) colValues[col] = new Set();
+      String(val).split(';').forEach(v => { v = v.trim(); if(v) colValues[col].add(v); });
+    });
+  });
+
+  let html = '<div class="mm-fp-header"><div class="mm-fp-title">Filters</div><button class="mm-fp-clear" onclick="clearMMFilters()">Clear all</button></div><div class="mm-fp-grid">';
+  Object.entries(colValues).forEach(([col, vals]) => {
+    if(vals.size < 2) return; // skip single-value cols
+    const colId = col.replace(/[^a-zA-Z0-9]/g,'_');
+    html += `<div class="mm-fp-field">
+      <div class="mm-fp-label">${col}</div>
+      <input class="mm-fp-search" type="text" placeholder="Search..." oninput="filterMMTags('${colId}', this.value)">
+      <div class="mm-fp-tags" id="mmtags_${colId}">`;
+    [...vals].sort().forEach(v => {
+      html += `<div class="mm-fp-tag" data-col="${col}" data-val="${v.replace(/"/g,'&quot;')}" onclick="toggleMMTag(this)">${v}</div>`;
+    });
+    html += `</div></div>`;
+  });
+  html += '</div>';
+  panel.innerHTML = html;
+}
+
+function filterMMTags(colId, q) {
+  document.querySelectorAll(`#mmtags_${colId} .mm-fp-tag`).forEach(tag => {
+    tag.classList.toggle('hidden', q && !tag.dataset.val.toLowerCase().includes(q.toLowerCase()));
+  });
+}
+
+function toggleMMTag(el) {
+  el.classList.toggle('sel');
+  const col = el.dataset.col;
+  const val = el.dataset.val;
+  if (!MM_ACTIVE_FILTERS[col]) MM_ACTIVE_FILTERS[col] = new Set();
+  if (el.classList.contains('sel')) MM_ACTIVE_FILTERS[col].add(val);
+  else { MM_ACTIVE_FILTERS[col].delete(val); if(!MM_ACTIVE_FILTERS[col].size) delete MM_ACTIVE_FILTERS[col]; }
+  updateMMBadge();
+  mmRender();
+}
+
+function clearMMFilters() {
+  Object.keys(MM_ACTIVE_FILTERS).forEach(k => delete MM_ACTIVE_FILTERS[k]);
+  document.querySelectorAll('.mm-fp-tag.sel').forEach(t => t.classList.remove('sel'));
+  updateMMBadge();
+  mmRender();
+}
+
+function updateMMBadge() {
+  const n = Object.values(MM_ACTIVE_FILTERS).reduce((s,v)=>s+v.size,0);
+  const badge = document.getElementById('mm-filter-badge');
+  badge.textContent = n;
+  badge.classList.toggle('show', n > 0);
+}
+
+function toggleMMFilters() {
+  _mmPanelOpen = !_mmPanelOpen;
+  document.getElementById('mm-filter-panel').classList.toggle('open', _mmPanelOpen);
+  document.getElementById('mm-filter-btn').classList.toggle('open', _mmPanelOpen);
+}
+
+// ── Filtering ────────────────────────────────────────────────
+let _mmSharedFilters = {}; let _mmSharedTextFilters = {};
+function mmGetFiltered() {
+  const q = (document.getElementById('mm-search').value||'').trim().toLowerCase();
+  const _base = applySharedFilters(MM_ROWS, _mmSharedFilters, _mmSharedTextFilters||{});
+  return _base.filter(r => {
+    if (q && !Object.values(r).join(' ').toLowerCase().includes(q)) return false;
+    for (const [col, vals] of Object.entries(MM_ACTIVE_FILTERS)) {
+      if (!vals.size) continue;
+      const cellVals = (r[col]||'').split(';').map(s=>s.trim());
+      if (!cellVals.some(v => vals.has(v))) return false;
+    }
+    return true;
+  });
+}
+
+// ── Rendering ────────────────────────────────────────────────
+function mmGoPage(p) {
+  const total = Math.ceil(_mmFiltered.length / MM_PAGE_SIZE);
+  mmPage = Math.max(1, Math.min(p, total || 1));
+  mmRenderPage(_mmFiltered);
+}
+
+function mmRender() {
+  const sort = document.getElementById('mm-sort').value;
+  let data = mmGetFiltered();
+  data.sort((a,b) => {
+    if(sort==='date-desc') return new Date(b['Published Date']||0)-new Date(a['Published Date']||0);
+    if(sort==='date-asc')  return new Date(a['Published Date']||0)-new Date(b['Published Date']||0);
+    return (a['Content Name (EN)']||'').localeCompare(b['Content Name (EN)']||'');
+  });
+  _mmFiltered = data;
+  mmPage = 1;
+  mmRenderPage(data);
+}
+
+const DOT_COLORS = {Video:'#A32D2D',Podcast:'#534AB7',Infographic:'#0F6E56',Article:'#185FA5',Email:'#993556',Campaign:'#854F0B',Webinar:'#3B6D11','Live Stream':'#9c2a22',default:'#534AB7'};
+const STATUS_CLS = {Published:'mm-chip-pub',Draft:'mm-chip-dft','Under Review':'mm-chip-rev',Approved:'mm-chip-pub',Archived:'mm-chip-arch',Active:'mm-chip-pub'};
+
+function mmRenderPage(data) {
+  const total = data.length;
+  const totalPages = Math.ceil(total / MM_PAGE_SIZE) || 1;
+  const start = (mmPage-1)*MM_PAGE_SIZE;
+  const pageData = data.slice(start, start+MM_PAGE_SIZE);
+  const q = (document.getElementById('mm-search').value||'').trim().toLowerCase();
+
+  document.getElementById('mm-count').textContent = total + ' result' + (total!==1?'s':'');
+
+  // Pagination
+  const bar = document.getElementById('mm-pg-bar');
+  bar.style.display = total > MM_PAGE_SIZE ? 'flex' : 'none';
+  if(total > MM_PAGE_SIZE) {
+    document.getElementById('mm-pg-info').innerHTML = `Showing <strong>${start+1}–${Math.min(start+MM_PAGE_SIZE,total)}</strong> of <strong>${total}</strong>`;
+    document.getElementById('mm-pg-prev').disabled = mmPage<=1;
+    document.getElementById('mm-pg-next').disabled = mmPage>=totalPages;
+    const pgs = document.getElementById('mm-pg-pages'); pgs.innerHTML='';
+    let s=Math.max(1,mmPage-2),e=Math.min(totalPages,s+4); s=Math.max(1,e-4);
+    for(let i=s;i<=e;i++){
+      const b=document.createElement('button'); b.className='mm-pg-btn'+(i===mmPage?' active':'');
+      b.textContent=i; b.onclick=(p=>()=>mmGoPage(p))(i); pgs.appendChild(b);
+    }
+  }
+
+  const body = document.getElementById('mm-body');
+  if (!pageData.length) { body.innerHTML='<div class="mm-empty">No content found. Try adjusting your search or filters.</div>'; return; }
+
+  body.innerHTML='';
+  pageData.forEach((row, idx) => {
+    const dotColor = DOT_COLORS[row['Content Types']] || DOT_COLORS.default;
+    const plats = (row['Platform']||'').split(';').map(p=>`<span class="mm-chip mm-chip-plat">${esc(p.trim())}</span>`).join('');
+    const auds  = (row['Audience']||'').split(';').slice(0,2).map(a=>`<span class="mm-chip mm-chip-aud">${esc(a.trim())}</span>`).join('');
+    const scls  = STATUS_CLS[row['Status']] || 'mm-chip-arch';
+    const date  = row['Published Date'] ? formatDate(row['Published Date']) : '—';
+    const name  = row['Content Name (EN)'] || row['Content Name (FR)'] || row['ID'] || '—';
+    const isLast = idx === pageData.length-1;
+
+    const div = document.createElement('div');
+    div.className = 'mm-item';
+    div.innerHTML = `
+      <div class="mm-tl">
+        <div class="mm-dot" style="background:${dotColor}"></div>
+        ${!isLast?'<div class="mm-line"></div>':''}
+      </div>
+      <div class="mm-card">
+        <div class="mm-card-hdr">
+          <div class="mm-card-title">${highlight(name, q)}</div>
+          <div class="mm-card-date">📅 ${esc(date)}</div>
+        </div>
+        <div class="mm-card-meta">${esc(row['Owner Team']||'—')} · ${esc(row['Primary Thematic']||'')}</div>
+        ${row['Content Description']?`<div class="mm-card-desc">${highlight(row['Content Description'],q)}</div>`:''}
+        <div class="mm-chips">
+          ${plats}
+          ${row['Content Types']?`<span class="mm-chip mm-chip-type">${esc(row['Content Types'])}</span>`:''}
+          ${auds}
+          ${row['Status']?`<span class="mm-chip ${scls}">${esc(row['Status'])}</span>`:''}
+        </div>
+        <div class="mm-actions">
+          <button class="mm-btn reuse">♻️ Reuse</button>
+          <button class="mm-btn report" onclick='openMmReport(${JSON.stringify({ID:row.ID,"Content Name (EN)":row["Content Name (EN)"],"Owner Team":row["Owner Team"]}).replace(/'/g,"&#39;")})'>⚑ Report</button>
+          ${row['Content Published Link']&&row['Content Published Link']!=='nan'
+            ?`<a class="mm-btn view" href="${esc(row['Content Published Link'])}" target="_blank" rel="noopener">View ↗</a>`
+            :`<button class="mm-btn" disabled style="opacity:.35;cursor:default">No link</button>`}
+        </div>
+      </div>`;
+    body.appendChild(div);
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function highlight(text,q){
+  if(!q||!text)return esc(String(text||''));
+  return esc(String(text)).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark>$1</mark>');
+}
+function formatDate(d){try{return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});}catch(e){return d;}}
+
+// ── Report modal ─────────────────────────────────────────────
+let _mmReportTarget = null;
+function openMmReport(row) {
+  _mmReportTarget = row;
+  document.getElementById('mm-report-desc').textContent = `"${row['Content Name (EN)']||row['ID']||'?'}" (Owner: ${row['Owner Team']||'?'})`;
+  document.getElementById('mm-report-reason').value='';
+  document.getElementById('mm-report-msg').value='';
+  document.getElementById('mm-report-modal').classList.add('open');
+}
+function closeMmReport(){ document.getElementById('mm-report-modal').classList.remove('open'); }
+async function submitMmReport(){
+  if(!_mmReportTarget) return;
+  const reason=document.getElementById('mm-report-reason').value;
+  if(!reason){alert('Please select a reason.');return;}
+  await fetch('/api/report',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content_id:_mmReportTarget.ID,content_name:_mmReportTarget['Content Name (EN)'],owner_team:_mmReportTarget['Owner Team'],reason,message:document.getElementById('mm-report-msg').value})});
+  closeMmReport(); alert('✅ Report sent!');
+}
+document.getElementById('mm-report-modal').addEventListener('click',e=>{if(e.target===document.getElementById('mm-report-modal'))closeMmReport();});
+
+// ── Search debounce ──────────────────────────────────────────
+function debounceM(fn,d){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),d);}}
+document.getElementById('mm-search').addEventListener('input', debounceM(()=>mmRender(), 300));
+
+// ── Init ─────────────────────────────────────────────────────
+buildSharedFilterPanel(MM_ROWS, ["ID","List Name","Content Name (EN)","Content Name (FR)","Content Description","Content Published Link","Creation Date","Published Date","Last Update Date","Next Review Date","Content Version","Instance Name (EN | FR)"], "sfp-mm", (af)=>{_mmSharedFilters=af;mmRender();});
+mmRender();
+</script>
+{% endblock %}
