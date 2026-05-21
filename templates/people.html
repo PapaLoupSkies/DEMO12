@@ -184,7 +184,7 @@ async function initPdfViewer() {
       return;
     }
     lib.GlobalWorkerOptions.workerSrc = '/static/pdfjs/pdf.worker.min.js';
-    const task = lib.getDocument('/docs/org_chart.pdf');
+    const task = lib.getDocument('/static/fake_org.pdf');
     pdfDoc = await task.promise;
     document.getElementById('pdf-total').textContent = pdfDoc.numPages;
     loadingEl.style.display = 'none';

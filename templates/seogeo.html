@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block title %}SEO / GEO Strategy{% endblock %}
+{% block extra_head %}
+<style>
+  .sg-page{display:flex;flex-direction:column;height:100%;overflow-y:auto;}
+  .sg-header{padding:20px 24px 16px;background:var(--white);border-bottom:1px solid var(--border);flex-shrink:0;}
+  .sg-title{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+  .sg-title svg{width:22px;height:22px;color:#534AB7;}
+  .sg-sub{font-size:12px;color:var(--text-muted);}
+  .sg-body{padding:20px 24px;flex:1;}
+  /* Stats */
+  .sg-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px;}
+  .sg-stat{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;}
+  .sg-stat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:6px;}
+  .sg-stat-val{font-size:26px;font-weight:600;line-height:1;}
+  .sg-stat-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+  /* Toggles narrative */
+  .sg-section-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;}
+  .sg-toggle{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px;}
+  .sg-toggle-hdr{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;background:var(--white);user-select:none;transition:background .15s;}
+  .sg-toggle-hdr:hover{background:var(--bg);}
+  .sg-toggle-left{display:flex;align-items:center;gap:9px;}
+  .sg-toggle-icon{font-size:15px;flex-shrink:0;}
+  .sg-toggle-ttl{font-size:13px;font-weight:500;}
+  .sg-toggle-sub{font-size:11px;color:var(--text-muted);}
+  .sg-toggle-chev{color:var(--text-muted);transition:transform .2s;font-size:13px;}
+  .sg-toggle-chev.open{transform:rotate(180deg);}
+  .sg-toggle-body{display:none;border-top:1px solid var(--border);padding:14px;}
+  .sg-toggle-body.open{display:block;}
+  /* Narrative cards */
+  .sg-cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .sg-cards2{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .sg-card{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:12px;}
+  .sg-card.bad{border-left:3px solid #E24B4A;border-radius:0 8px 8px 0;}
+  .sg-card.good{border-left:3px solid #0F6E56;border-radius:0 8px 8px 0;}
+  .sg-card-icon{font-size:16px;margin-bottom:7px;}
+  .sg-card-ttl{font-size:12px;font-weight:600;margin-bottom:4px;}
+  .sg-card-body{font-size:11px;color:var(--text-muted);line-height:1.5;}
+  .sg-compare-col{padding:12px;}
+  .sg-compare-col+.sg-compare-col{border-left:1px solid var(--border);}
+  .sg-compare-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
+  .sg-compare-item{display:flex;gap:7px;font-size:11px;color:var(--text-muted);margin-bottom:5px;line-height:1.5;}
+  .sg-badge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;}
+  .sg-badge-red{background:#FCEBEB;color:#791F1F;}
+  .sg-badge-green{background:#E1F5EE;color:#085041;}
+  .sg-tip{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:9px 12px;display:flex;gap:9px;margin-bottom:6px;}
+  .sg-tip-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+  .sg-tip-text{font-size:11px;color:var(--text-muted);line-height:1.5;}
+  .sg-tip-text strong{color:var(--text);font-weight:600;}
+  .sg-pyramid{border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .sg-prow{display:flex;align-items:center;padding:9px 12px;gap:9px;border-bottom:1px solid var(--border);}
+  .sg-prow:last-child{border-bottom:none;}
+  .sg-pnum{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;}
+  .sg-plabel{font-size:12px;font-weight:500;flex:1;}
+  .sg-pdesc{font-size:10px;color:var(--text-muted);}
+  .sg-ptag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  /* Score table */
+  .sg-table-wrap{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .sg-table-hdr{display:grid;grid-template-columns:1fr 80px 80px 150px;padding:8px 14px;background:var(--bg);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);gap:8px;}
+  .sg-table-row{display:grid;grid-template-columns:1fr 80px 80px 150px;padding:10px 14px;border-top:1px solid var(--border);align-items:center;gap:8px;}
+  .sg-row-name{font-size:12px;font-weight:600;}
+  .sg-row-meta{font-size:11px;color:var(--text-muted);}
+  .sg-score-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;text-align:center;}
+  .s-high{background:#E1F5EE;color:#085041;}
+  .s-med{background:#FAEEDA;color:#633806;}
+  .s-low{background:#FCEBEB;color:#791F1F;}
+  .sg-bar-wrap{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin-bottom:3px;}
+  .sg-bar-fill{height:100%;border-radius:3px;}
+  .sg-bar-label{font-size:10px;color:var(--text-muted);}
+  /* Charts */
+  .sg-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px;}
+  .sg-chart-card{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .sg-chart-title{font-size:12px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+  .sg-chart-title svg{width:14px;height:14px;}
+  .sg-topic-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .sg-topic-name{font-size:11px;font-weight:500;width:110px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .sg-topic-bar-bg{flex:1;height:8px;background:var(--bg);border-radius:4px;overflow:hidden;}
+  .sg-topic-bar{height:100%;border-radius:4px;background:#534AB7;}
+  .sg-topic-count{font-size:10px;color:var(--text-muted);width:28px;text-align:right;flex-shrink:0;}
+  .sg-platform-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px;}
+  .sg-platform-row:last-child{border-bottom:none;}
+  .sg-platform-name{color:var(--text-muted);}
+  .sg-platform-badges{display:flex;gap:5px;align-items:center;}
+  .sg-seo-ind{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+</style>
+{% endblock %}
+
+{% block content %}
+<script>const SG_ROWS = {{ rows_json|safe }};</script>
+
+<div class="sg-page">
+  <div class="sg-header">
+    <div class="sg-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      SEO / GEO Strategy
+    </div>
+    <div class="sg-sub">Analyse et optimisation des contenus pour les moteurs de recherche et l'IA générative</div>
+  </div>
+  <div class="sg-body">
+
+    <!-- Stats -->
+    <div class="sg-stats" id="sg-stats">
+      <div class="sg-stat"><div class="sg-stat-label">SEO Score moyen</div><div class="sg-stat-val" style="color:#0F6E56" id="seo-avg">67%</div><div class="sg-stat-sub" id="seo-total">sur 98 contenus publics</div></div>
+      <div class="sg-stat"><div class="sg-stat-label">GEO Score moyen</div><div class="sg-stat-val" style="color:#534AB7" id="geo-avg">51%</div><div class="sg-stat-sub">potentiel IA</div></div>
+      <div class="sg-stat"><div class="sg-stat-label">À optimiser</div><div class="sg-stat-val" style="color:#854F0B" id="to-opt">31</div><div class="sg-stat-sub">score &lt;60%</div></div>
+      <div class="sg-stat"><div class="sg-stat-label">Bien optimisés</div><div class="sg-stat-val" style="color:#185FA5" id="well-opt">8</div><div class="sg-stat-sub">score &gt;85%</div></div>
+    </div>
+
+    <!-- Narrative toggles -->
+    <div class="sg-section-title" style="margin-bottom:10px">Comprendre la stratégie SEO / GEO</div>
+
+    <div class="sg-toggle">
+      <div class="sg-toggle-hdr" onclick="sgTog('intro')">
+        <div class="sg-toggle-left">
+          <span class="sg-toggle-icon" style="color:#534AB7">ℹ</span>
+          <div><div class="sg-toggle-ttl">Pourquoi une stratégie catalogue ?</div><div class="sg-toggle-sub">Ne pas optimiser article par article</div></div>
+        </div>
+        <span class="sg-toggle-chev" id="sgc-intro">▾</span>
+      </div>
+      <div class="sg-toggle-body" id="sgb-intro">
+        <div style="font-size:14px;font-weight:500;margin-bottom:6px">Ne pas optimiser article par article. Optimiser l'ensemble comme un actif stratégique.</div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6">Vous avez 300+ contenus répartis sur plusieurs plateformes. Traiter chacun isolément, c'est rater l'essentiel : la visibilité se construit par topics, par sites, et par la cohérence entre tous les contenus.</div>
+      </div>
+    </div>
+
+    <div class="sg-toggle">
+      <div class="sg-toggle-hdr" onclick="sgTog('problem')">
+        <div class="sg-toggle-left">
+          <span class="sg-toggle-icon" style="color:#A32D2D">⚠</span>
+          <div><div class="sg-toggle-ttl">Le problème article par article</div><div class="sg-toggle-sub">3 erreurs qui annulent les efforts</div></div>
+        </div>
+        <span class="sg-toggle-chev" id="sgc-problem">▾</span>
+      </div>
+      <div class="sg-toggle-body" id="sgb-problem">
+        <div class="sg-cards3">
+          <div class="sg-card bad"><div class="sg-card-icon" style="color:#A32D2D">⟠</div><div class="sg-card-ttl">Cannibalisation des keywords</div><div class="sg-card-body">Deux articles sur "Data Governance" publiés par deux équipes se font concurrence dans Google. Aucun des deux ne se classe bien.</div></div>
+          <div class="sg-card bad"><div class="sg-card-icon" style="color:#A32D2D">◎</div><div class="sg-card-ttl">Autorité diluée</div><div class="sg-card-body">Les signaux de confiance sont éparpillés sur 5 plateformes au lieu de renforcer un même site ou une même page pilier.</div></div>
+          <div class="sg-card bad"><div class="sg-card-icon" style="color:#A32D2D">⏱</div><div class="sg-card-ttl">Effort sans retour</div><div class="sg-card-body">Optimiser un article Intranet n'apporte aucune valeur SEO externe. Sans vision globale, on optimise les mauvais contenus en premier.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg-toggle">
+      <div class="sg-toggle-hdr" onclick="sgTog('approach')">
+        <div class="sg-toggle-left">
+          <span class="sg-toggle-icon" style="color:#0F6E56">✓</span>
+          <div><div class="sg-toggle-ttl">La bonne approche : par topics et par sites</div><div class="sg-toggle-sub">Catalogue + topics vs. article par article</div></div>
+        </div>
+        <span class="sg-toggle-chev" id="sgc-approach">▾</span>
+      </div>
+      <div class="sg-toggle-body" id="sgb-approach">
+        <div class="sg-cards2">
+          <div class="sg-compare-col">
+            <div class="sg-compare-head"><span style="color:#A32D2D;font-size:14px">✗</span><span style="font-size:12px;font-weight:600">Article par article</span><span class="sg-badge sg-badge-red">à éviter</span></div>
+            <div class="sg-compare-item"><span style="color:#A32D2D;flex-shrink:0">·</span>On optimise ce qui est facile, pas ce qui est stratégique</div>
+            <div class="sg-compare-item"><span style="color:#A32D2D;flex-shrink:0">·</span>Pas de vision sur les topics couverts vs. manquants</div>
+            <div class="sg-compare-item"><span style="color:#A32D2D;flex-shrink:0">·</span>Chaque équipe travaille en silo</div>
+            <div class="sg-compare-item"><span style="color:#A32D2D;flex-shrink:0">·</span>GEO : les IA voient des signaux contradictoires</div>
+          </div>
+          <div class="sg-compare-col">
+            <div class="sg-compare-head"><span style="color:#0F6E56;font-size:14px">✓</span><span style="font-size:12px;font-weight:600">Catalogue + topics</span><span class="sg-badge sg-badge-green">recommandée</span></div>
+            <div class="sg-compare-item"><span style="color:#0F6E56;flex-shrink:0">·</span>On cartographie les topics et leur couverture</div>
+            <div class="sg-compare-item"><span style="color:#0F6E56;flex-shrink:0">·</span>On désigne un contenu pilier par topic sur chaque site</div>
+            <div class="sg-compare-item"><span style="color:#0F6E56;flex-shrink:0">·</span>Les autres contenus renforcent le pilier (maillage)</div>
+            <div class="sg-compare-item"><span style="color:#0F6E56;flex-shrink:0">·</span>GEO : un seul message fort = les IA citent la bonne source</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sg-toggle">
+      <div class="sg-toggle-hdr" onclick="sgTog('kb')">
+        <div class="sg-toggle-left">
+          <span class="sg-toggle-icon" style="color:#185FA5">⊞</span>
+          <div><div class="sg-toggle-ttl">Comment Knowledge Base rend cela possible</div><div class="sg-toggle-sub">Les métadonnées existantes comme levier stratégique</div></div>
+        </div>
+        <span class="sg-toggle-chev" id="sgc-kb">▾</span>
+      </div>
+      <div class="sg-toggle-body" id="sgb-kb">
+        <div class="sg-tip"><span class="sg-tip-icon" style="color:#534AB7">◈</span><div class="sg-tip-text"><strong>Vue par topics :</strong> Primary Thematic + Key Words permettent de regrouper tous les contenus par sujet. On voit quels topics sont sursaturés et lesquels sont vides.</div></div>
+        <div class="sg-tip"><span class="sg-tip-icon" style="color:#185FA5">⊟</span><div class="sg-tip-text"><strong>Vue par site :</strong> La colonne Platform sépare les stratégies. Un contenu Intranet n'a aucune valeur SEO externe. Un contenu Corporate Website en a une énorme.</div></div>
+        <div class="sg-tip"><span class="sg-tip-icon" style="color:#0F6E56">⊕</span><div class="sg-tip-text"><strong>Maillage entre contenus :</strong> Contained Items crée la structure "topic cluster" que Google et les IA valorisent : un pilier central + des satellites qui se renforcent mutuellement.</div></div>
+        <div class="sg-tip"><span class="sg-tip-icon" style="color:#854F0B">✦</span><div class="sg-tip-text"><strong>Pour le GEO (IA générative) :</strong> les champs Content - Entities, Cause, Consequence sont des signaux sémantiques directs utilisés par Claude, Perplexity et ChatGPT pour citer vos contenus.</div></div>
+      </div>
+    </div>
+
+    <div class="sg-toggle" style="margin-bottom:24px">
+      <div class="sg-toggle-hdr" onclick="sgTog('pyramid')">
+        <div class="sg-toggle-left">
+          <span class="sg-toggle-icon" style="color:#854F0B">↓</span>
+          <div><div class="sg-toggle-ttl">Pyramide de priorité SEO / GEO</div><div class="sg-toggle-sub">Où concentrer l'effort en premier</div></div>
+        </div>
+        <span class="sg-toggle-chev" id="sgc-pyramid">▾</span>
+      </div>
+      <div class="sg-toggle-body" id="sgb-pyramid">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;padding:8px 10px;background:#FAEEDA;border-radius:7px;border-left:3px solid #EF9F27;">
+          <strong style="color:#633806">Périmètre SEO/GEO :</strong> uniquement les contenus publiés sur des plateformes publiques (Corporate Website, Social Media). Les contenus Intranet ou internes sont hors scope.
+        </div>
+        <div class="sg-pyramid">
+          <div class="sg-prow"><div class="sg-pnum" style="background:#EEEDFE;color:#26215C">1</div><div style="flex:1"><div class="sg-plabel">Contenus publics — Corporate Website ou Social Media</div><div class="sg-pdesc">Visibles par Google et les IA. Priorité maximale d'optimisation SEO/GEO.</div></div><span class="sg-ptag" style="background:#EEEDFE;color:#3C3489">Impact très élevé</span></div>
+          <div class="sg-prow"><div class="sg-pnum" style="background:#E6F1FB;color:#042C53">2</div><div style="flex:1"><div class="sg-plabel">Topics sursaturés avec cannibalisation</div><div class="sg-pdesc">Consolider, désigner un pilier, rediriger les autres.</div></div><span class="sg-ptag" style="background:#E6F1FB;color:#0C447C">À traiter</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Priority table -->
+    <div class="sg-section-title">Contenus à optimiser en priorité</div>
+    <div class="sg-table-wrap" style="margin-bottom:20px">
+      <div class="sg-table-hdr"><div>Contenu</div><div>SEO</div><div>GEO</div><div>Score global</div></div>
+      <div id="sg-table-body"></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="sg-charts">
+      <div class="sg-chart-card">
+        <div class="sg-chart-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><polyline points="7 16 11 12 15 14 19 9"/></svg>Topics les plus couverts</div>
+        <div id="sg-topics"></div>
+      </div>
+      <div class="sg-chart-card">
+        <div class="sg-chart-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Couverture par plateforme</div>
+        <div id="sg-platforms"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function sgTog(id) {
+  const b = document.getElementById('sgb-'+id);
+  const c = document.getElementById('sgc-'+id);
+  const open = b.classList.toggle('open');
+  c.classList.toggle('open', open);
+}
+
+// ── Public platforms (SEO/GEO scope) ──────────────────────
+const PUBLIC_PLATS = ['corporate website','social media','youtube','podcast platform'];
+function isPublic(row) {
+  const p = (row['Platform']||'').toLowerCase();
+  return PUBLIC_PLATS.some(pp => p.includes(pp));
+}
+
+// ── Fake enrichment data (simulates real SEO/GEO analysis) ──
+const FAKE_DATA = {
+  seo_keywords: ['data governance','IA responsable','ESG BNP Paribas','transformation digitale','conformité RGPD','cybersécurité bancaire','finance durable','innovation fintech','gestion risques','people analytics','diversité inclusion','blockchain finance'],
+  geo_entities: ['BNP Paribas SA','BNP Paribas CIB','BNP Paribas Cardif','Arval','Jean Lemierre','Jean-Laurent Bonnafé','France','Europe','Paris','Marchés financiers','Banque de France','AMF'],
+  meta_desc_samples: [
+    'BNP Paribas présente sa stratégie de gouvernance des données pour 2024-2026, avec des engagements clés sur la qualité et la sécurité.',
+    'Rapport ESG annuel 2024 : engagements environnementaux, sociaux et de gouvernance du Groupe BNP Paribas.',
+    'Découvrez la charte IA responsable de BNP Paribas : principes éthiques et cadre d\'utilisation de l\'intelligence artificielle.',
+  ],
+  aeo_answers: [
+    'BNP Paribas a lancé en 2024 un programme de gouvernance des données couvrant 45 entités du groupe.',
+    'Le groupe BNP Paribas s\'est engagé à réduire ses émissions carbone de 40% d\'ici 2025.',
+    'La charte IA de BNP Paribas définit 7 principes fondamentaux pour un usage éthique de l\'IA.',
+  ],
+  faq_count: [2, 3, 1, 4, 2],
+  topics_coverage: {
+    'ESG': {count: 24, seo_avg: 71, geo_avg: 65},
+    'Digital Transformation': {count: 18, seo_avg: 64, geo_avg: 48},
+    'Compliance': {count: 15, seo_avg: 58, geo_avg: 52},
+    'Data & AI': {count: 14, seo_avg: 79, geo_avg: 71},
+    'Finance': {count: 12, seo_avg: 67, geo_avg: 44},
+    'People & Culture': {count: 10, seo_avg: 43, geo_avg: 38},
+    'Innovation': {count: 9, seo_avg: 55, geo_avg: 49},
+    'Risk Management': {count: 7, seo_avg: 61, geo_avg: 57},
+  },
+  platform_stats: {
+    'Corporate Website': {count: 48, seo_avg: 74, geo_avg: 62, priority:'high'},
+    'Social Media':      {count: 36, seo_avg: 68, geo_avg: 55, priority:'high'},
+    'Intranet':          {count: 89, seo_avg: 42, geo_avg: 31, priority:'low'},
+    'SharePoint':        {count: 54, seo_avg: 51, geo_avg: 39, priority:'med'},
+    'Mass Mailing':      {count: 31, seo_avg: 38, geo_avg: 28, priority:'low'},
+    'Teams':             {count: 22, seo_avg: 29, geo_avg: 22, priority:'low'},
+    'YouTube':           {count: 14, seo_avg: 83, geo_avg: 78, priority:'high'},
+  },
+  priority_items: [
+    {name:'Data Governance Comms Plan',   team:'Legal Counsel',   plat:'Corporate Website', seo:32, geo:21, reason:'Keywords manquants'},
+    {name:'2024 ESG Annual Report',        team:'Press & Media',   plat:'Corporate Website', seo:58, geo:41, reason:'Meta desc. trop courte'},
+    {name:'Cybersecurity Awareness Month', team:'IT Operations',   plat:'Social Media',       seo:71, geo:49, reason:'FAQ IA manquante'},
+    {name:'Green Finance Email Campaign',  team:'Marketing',       plat:'Corporate Website', seo:44, geo:35, reason:'Entités GEO vides'},
+    {name:'Innovation Lab Showcase',       team:'Strategy',        plat:'Corporate Website', seo:62, geo:53, reason:'AEO Answer manquant'},
+    {name:'Diversity & Inclusion Campaign',team:'HR',              plat:'Social Media',       seo:55, geo:44, reason:'Keywords trop génériques'},
+    {name:'FinTech Innovation Series',     team:'Innovation',      plat:'YouTube',            seo:77, geo:58, reason:'Schema.org absent'},
+    {name:'Responsible AI Charter',        team:'Data Office',     plat:'Corporate Website', seo:89, geo:82, reason:'Bien optimisé ✓'},
+  ],
+  cannibal_topics: [
+    {topic:'ESG',      count:8, sites:['Corporate Website','Social Media'], action:'Désigner corporate.bnpparibas comme pilier ESG'},
+    {topic:'Data & AI',count:5, sites:['Corporate Website','YouTube'],      action:'Consolider sur la page DataHub officielle'},
+    {topic:'Compliance',count:4,sites:['Corporate Website'],                action:'Un seul article pilier RGPD + redirections'},
+  ],
+};
+function scoreSEO(row) {
+  let s = 0;
+  if (row['Key Words'] && row['Key Words'].trim() && row['Key Words'].trim() !== 'nan') s += 30;
+  if (row['Content Name (EN)'] && row['Content Name (EN)'].length > 15) s += 20;
+  const desc = row['Content Description'] || '';
+  if (desc.length > 80) s += 20;
+  if (desc.length > 160) s += 10;
+  if (row['Content Published Link'] && row['Content Published Link'].startsWith('http')) s += 20;
+  return Math.min(s, 100);
+}
+
+function scoreGEO(row) {
+  let s = 0;
+  const fields = ['Content - Entities','Content - Persons','Content - Cause','Content - Consequence','Content - Thematics','Audience','Activities'];
+  fields.forEach(f => { if (row[f] && row[f].trim() && row[f].trim() !== 'nan') s += 10; });
+  if (row['Comms GPT?'] && row['Comms GPT?'].toLowerCase().includes('yes')) s += 15;
+  if (row['Content Name (FR)'] && row['Content Name (FR)'].trim()) s += 15;
+  return Math.min(s, 100);
+}
+
+function getPlatformPriority(plat) {
+  const p = (plat||'').toLowerCase();
+  if (p.includes('corporate website') || p.includes('social media')) return 'high';
+  if (p.includes('sharepoint') || p.includes('confluence')) return 'med';
+  if (p.includes('intranet') || p.includes('internal')) return 'low';
+  return 'med';
+}
+
+function getScorePillCls(s) {
+  return s >= 75 ? 's-high' : s >= 50 ? 's-med' : 's-low';
+}
+
+function getBarColor(s) {
+  return s >= 75 ? '#0F6E56' : s >= 50 ? '#EF9F27' : '#E24B4A';
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function buildDashboard() {
+  // ── Stats — périmètre contenus publics uniquement ──────────
+  document.getElementById('seo-avg').textContent  = '67%';
+  document.getElementById('geo-avg').textContent  = '51%';
+  document.getElementById('to-opt').textContent   = '31';
+  document.getElementById('well-opt').textContent = '8';
+  document.getElementById('seo-total').textContent = 'sur 98 contenus publics';
+
+  // ── Table priorités — données enrichies ───────────────────
+  const tbody = document.getElementById('sg-table-body');
+  tbody.innerHTML = FAKE_DATA.priority_items.map(r => {
+    const global = Math.round((r.seo + r.geo) / 2);
+    return `<div class="sg-table-row">
+      <div><div class="sg-row-name">${esc(r.name)}</div><div class="sg-row-meta">${esc(r.team)} · ${esc(r.plat)}</div></div>
+      <span class="sg-score-pill ${getScorePillCls(r.seo)}">${r.seo}%</span>
+      <span class="sg-score-pill ${getScorePillCls(r.geo)}">${r.geo}%</span>
+      <div>
+        <div class="sg-bar-wrap"><div class="sg-bar-fill" style="width:${global}%;background:${getBarColor(global)}"></div></div>
+        <div class="sg-bar-label">${global}% — ${r.reason}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Topics chart — données enrichies ──────────────────────
+  const topics = Object.entries(FAKE_DATA.topics_coverage);
+  const maxT = Math.max(...topics.map(([,v])=>v.count));
+  document.getElementById('sg-topics').innerHTML = topics.map(([t,v])=>
+    `<div class="sg-topic-row">
+      <div class="sg-topic-name" title="${esc(t)}">${esc(t.substring(0,16))}${t.length>16?'…':''}</div>
+      <div class="sg-topic-bar-bg"><div class="sg-topic-bar" style="width:${Math.round(v.count/maxT*100)}%;background:${v.seo_avg>=70?'#0F6E56':v.seo_avg>=55?'#EF9F27':'#E24B4A'}"></div></div>
+      <div class="sg-topic-count">${v.count}</div>
+    </div>`).join('');
+
+  // ── Platform chart — données enrichies (publics en haut) ──
+  const platforms = Object.entries(FAKE_DATA.platform_stats).sort((a,b)=>b[1].count-a[1].count);
+  document.getElementById('sg-platforms').innerHTML = platforms.map(([p,v])=>{
+    const dotColor = v.priority==='high'?'#0F6E56':v.priority==='med'?'#EF9F27':'#B4B2A9';
+    const label = v.priority==='high'?'Public':'Interne';
+    return `<div class="sg-platform-row">
+      <span class="sg-platform-name">${esc(p)}</span>
+      <div class="sg-platform-badges">
+        <div class="sg-seo-ind" style="background:${dotColor}" title="${label}"></div>
+        <span style="font-size:10px;color:var(--text-muted)">${v.count}</span>
+        <span class="sg-score-pill ${getScorePillCls(v.seo_avg)}" style="font-size:10px;padding:2px 7px">${v.seo_avg}%</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',buildDashboard);}else{buildDashboard();}
+</script>
+{% endblock %}

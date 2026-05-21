@@ -319,6 +319,14 @@ def api_multiplemedia():
     rows = load_multiple_media()
     return jsonify({"rows": clean(rows)})
 
+
+@app.route("/seogeo")
+@login_required
+def seogeo():
+    import json as _json
+    rows = load_all_catalog()
+    return render_template("seogeo.html", rows_json=_json.dumps(clean(rows)), **ctx())
+
 @app.route("/pole")
 @login_required
 def pole():
